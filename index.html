@@ -172,11 +172,28 @@ function setSprites(){
                     new Sprite("cross", [1, 1]),
                     ],
                     1, false),
+        cross_limp: new Animation([
+                    new Sprite("cross", [1, 1]),
+                    new Sprite("cross-tilt", [1, 1]),
+                    ],
+                    12, true),
         bat: new Animation([
                     new Sprite("bat", [1, 1]),
                     ],
                     1, false),
         raven_idle: new Animation([
+                    new Sprite("raven", [1.5, 1.3]),
+                    new Sprite("raven2", [1.5, 1.3]),
+                    new Sprite("raven3", [1.5, 1.3]),
+                    new Sprite("raven4", [1.5, 1.3]),
+                    new Sprite("raven5", [1.5, 1.3]),
+                    new Sprite("raven6", [1.5, 1.3]),
+                    new Sprite("raven7", [1.5, 1.3]),
+                    new Sprite("raven8", [1.5, 1.3]),
+                    new Sprite("raven9", [1.5, 1.3]),
+                    ],
+                    5, true),
+        raven_fly: new Animation([
                     new Sprite("raven", [1.5, 1.3]),
                     ],
                     1, false),
@@ -822,6 +839,7 @@ Raven.prototype.interact = function(obj){
             if(this.position.x < player.position.x || this.delayTimer > 250){
                 this.retreating = true;
                 this.delayTimer = 0;
+                this.animation = Object.create(spriteAnimations.raven_idle);
             }
         }else{
             var dx = GAME.canvas.width * 0.9 - this.position.x;
@@ -834,6 +852,7 @@ Raven.prototype.interact = function(obj){
             if(this.delayTimer > 175 && 
             Math.abs(this.position.y - player.position.y) < this.height){
                 this.retreating = false;
+                this.animation = Object.create(spriteAnimations.raven_fly);
             }
         }
     }
@@ -843,6 +862,7 @@ Raven.prototype.whenHit = function(){
     if(this.variant < 2){
         this.retreating = true;
         this.delayTimer = 0;
+        this.animation = Object.create(spriteAnimations.raven_idle);
     }else if(this.variant > 2){
         for(var i = 0; i < 2 * Math.PI; i += Math.PI/3){
             var b = new LeftistBullet(this.position.x + this.width/2,
@@ -860,7 +880,7 @@ function CrossShot(X, Y, variant=1){
     this.hp = 3;
     this.velocity = {x: 0, y: 0};
     this.variant = variant;
-    this.animation = spriteAnimations.cross_idle;
+    this.animation = Object.create(spriteAnimations.cross_limp);
     this.delayTimer = 0;
     if(this.variant > 1){
         this.hp = 5;
@@ -899,6 +919,12 @@ CrossShot.prototype.interact = function(obj){
     if(obj instanceof Player){
         if(this.delayTimer < 50){
             this.applyForce(-0.3, 1 * Math.sin(this.delayTimer/25 * 2 * Math.PI));
+        }
+        if(this.delayTimer == 0){
+            this.animation = Object.create(spriteAnimations.cross_limp);
+        }
+        if(this.delayTimer == 50){
+            this.animation = Object.create(spriteAnimations.cross_idle);
         }
     }
     Enemy.prototype.interact.call(this, obj);
@@ -3565,8 +3591,17 @@ function main(){
         <img id="lost7" class="img" src="./images/Lost-Walk7.png" alt="It didn't work.">
         <img id="lost8" class="img" src="./images/Lost-Walk8.png" alt="It didn't work.">
         <img id="cross" class="img" src="./images/Cross.png" alt="It didn't work.">
+        <img id="cross-tilt" class="img" src="./images/Cross2.png" alt="It didn't work.">
         <img id="bat" class="img" src="./images/Bat.png" alt="It didn't work.">
         <img id="raven" class="img" src="./images/Raven.png" alt="It didn't work.">
+        <img id="raven2" class="img" src="./images/Raven2.png" alt="It didn't work.">
+        <img id="raven3" class="img" src="./images/Raven3.png" alt="It didn't work.">
+        <img id="raven4" class="img" src="./images/Raven4.png" alt="It didn't work.">
+        <img id="raven5" class="img" src="./images/Raven5.png" alt="It didn't work.">
+        <img id="raven6" class="img" src="./images/Raven6.png" alt="It didn't work.">
+        <img id="raven7" class="img" src="./images/Raven7.png" alt="It didn't work.">
+        <img id="raven8" class="img" src="./images/Raven8.png" alt="It didn't work.">
+        <img id="raven9" class="img" src="./images/Raven9.png" alt="It didn't work.">
         <img id="mirage" class="img" src="./images/Mirage.png" alt="It didn't work.">
         <img id="demon" class="img" src="./images/DemonicShape.png" alt="It didn't work.">
         <img id="memory" class="img" src="./images/Memory.png" alt="It didn't work.">
