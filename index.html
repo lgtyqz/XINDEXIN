@@ -238,6 +238,10 @@ function setSprites(){
                     new Sprite("canid-hurt", [1, 1]),
                     ],
                     1, false),
+        snow: new Animation([
+                    new Sprite("snow", [10, 1]),
+                    ],
+                    1, false),
     };
     for(var i in spriteAnimations){
         spriteAnimations[i].init();
@@ -3641,5 +3645,6 @@ function main(){
         <img id="headsplitter" class="img" src="./images/HeadSplitter.png" alt="It didn't work.">
         <img id="canid" class="img" src="./images/Canid.png" alt="It didn't work.">
         <img id="canid-hurt" class="img" src="./images/Canid-Hurt.png" alt="It didn't work.">
+        <img id="snow" class="img" src="./images/Snow.png" alt="It didn't work.">
     </body>
 </html>
