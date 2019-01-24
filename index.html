@@ -385,6 +385,26 @@ Particle.prototype.draw = function(){
     CTX.restore();
 }
 
+function Snow(X, Y, RAD){
+    Particle.call(this, X, Y, RAD, RAD, [255, 255, 255]);
+    this.animation = spriteAnimations.snow;
+}
+Snow.prototype = Object.create(Particle.prototype);
+Snow.prototype.update = function(){
+    this.move();
+    //this.applyFriction();
+    this.draw();
+    if(!this.onScreen()){
+        this.dead = true;
+    }
+}
+Snow.prototype.draw = function(){
+    var CTX = GAME.context;
+    CTX.globalAlpha = 0.4;
+    this.animation.draw(this.position.x, this.position.y, this.width, this.height);
+    CTX.globalAlpha = 1;
+}
+
 function Bullet(X, Y, W, H, color=[0, 0, 0]){
     Entity.call(this, X, Y, W, H);
     this.color = color; //list format
@@ -2096,6 +2116,11 @@ function drawForeground(){
         CTX.fillStyle = "#FAFAFA";
         CTX.fillRect(0, 0, GAME.canvas.width, GAME.canvas.height);
         CTX.globalAlpha = 1;
+        if(Math.random() < 0.25){
+            var s = new Snow(GAME.canvas.width - 1, Math.random() * GAME.canvas.height, Math.random() * 10 + 5);
+            s.setVelocity(-10, 0);
+            entities.push(s);
+        }
     }
     CTX.fillStyle = "#FF0000";
     CTX.fillRect(15, 15, player.delayTimer * 2, 15);
@@ -3543,6 +3568,9 @@ function main(){
     }
     GAME.clear();
     GAME.context.fillStyle = "#FFFFFF";
+    if(GAME.level == 3){
+        GAME.context.fillStyle = "#BBBBBB";
+    }
     GAME.context.fillRect(-GAME.canvas.width * 3, -GAME.canvas.height * 3,
     GAME.canvas.width * 6, GAME.canvas.height * 6);
     player.centerPosition();
