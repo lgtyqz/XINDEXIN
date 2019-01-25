@@ -218,10 +218,15 @@ function setSprites(){
                     2, true),
         blackhead_idle: new Animation([
                     new Sprite("blackhead", [1, 1]),
+                    new Sprite("blackhead2", [1, 1]),
                     ],
-                    1, false),
+                    10, true),
         whitehead_idle: new Animation([
                     new Sprite("whitehead", [1, 1]),
+                    ],
+                    1, false),
+        whitehead_laser: new Animation([
+                    new Sprite("whitehead-laser", [1, 1]),
                     ],
                     1, false),
         blower: new Animation([
@@ -242,6 +247,39 @@ function setSprites(){
                     1, false),
         snow: new Animation([
                     new Sprite("snow", [10, 1]),
+                    ],
+                    1, false),
+        forest_guard_idle: new Animation([
+                    new Sprite("forest-guard-neutral", [1, 1]),
+                    new Sprite("forest-guard-neutral", [1, 1]),
+                    new Sprite("forest-guard-neutral", [1, 1]),
+                    new Sprite("forest-guard-neutral", [1, 1]),
+                    new Sprite("forest-guard-neutral", [1, 1]),
+                    new Sprite("forest-guard-neutral", [1, 1]),
+                    new Sprite("forest-guard-neutral", [1, 1]),
+                    new Sprite("forest-guard-neutral", [1, 1]),
+                    new Sprite("forest-guard-neutral", [1, 1]),
+                    new Sprite("forest-guard-neutral", [1, 1]),
+                    new Sprite("forest-guard-neutral", [1, 1]),
+                    new Sprite("forest-guard-neutral", [1, 1]),
+                    new Sprite("forest-guard-neutral2", [1, 1]),
+                    new Sprite("forest-guard-neutral3", [1, 1]),
+                    new Sprite("forest-guard-neutral4", [1, 1]),
+                    new Sprite("forest-guard-neutral3", [1, 1]),
+                    new Sprite("forest-guard-neutral2", [1, 1]),
+                    ],
+                    10, true),
+        forest_guard_roar: new Animation([
+                    new Sprite("forest-guard-roar1", [1, 1]),
+                    new Sprite("forest-guard-roar2", [1, 1]),
+                    new Sprite("forest-guard-roar3", [1, 1]),
+                    //new Sprite("forest-guard-roar4", [1, 1]),
+                    //new Sprite("forest-guard-roar3", [1, 1]),
+                    new Sprite("forest-guard-roar2", [1, 1]),
+                    ],
+                    6, true),
+        hostile: new Animation([
+                    new Sprite("hostile", [1, 1]),
                     ],
                     1, false),
     };
@@ -321,7 +359,7 @@ function Sprite(imageSrc, scale=[1, 1]){
     this.scale = {x: scale[0], y: scale[1]};
     this.initImage = function(){
         this.image = document.getElementById(this.imageSrc);
-        console.log(this.image);
+        //console.log(this.image);
     }
     this.draw = function(left, top, width, height){
         //console.log("Good to go!");
@@ -1142,7 +1180,7 @@ function WhiteHead(X, Y, variant=1){
     this.variant = variant;
     this.delayTimer = 0;
     this.aimPos = {DX: 0, DY: 0, MAG: 1};
-    this.animation = spriteAnimations.whitehead_idle;
+    this.animation = Object.create(spriteAnimations.whitehead_idle);
 }
 WhiteHead.prototype = Object.create(Enemy.prototype);
 WhiteHead.prototype.update = function(){
@@ -1158,6 +1196,7 @@ WhiteHead.prototype.interact = function(obj){
         this.applyForce(0.15 * dx/mag, 0.15 * dy/mag);
         if(this.delayTimer == 100){
             this.aimPos = {DX: dx, DY: dy, MAG: mag};
+            this.animation = Object.create(spriteAnimations.whitehead_laser);
         }
         if(this.delayTimer >= 100 && this.delayTimer % 4 == 0){
             var b = new Bullet(this.position.x + this.width/2,
@@ -1172,6 +1211,7 @@ WhiteHead.prototype.interact = function(obj){
         }
         if(this.delayTimer >= 125){
             this.delayTimer = 0;
+            this.animation = Object.create(spriteAnimations.whitehead_idle);
         }
     }
     Enemy.prototype.interact.call(this, obj);
@@ -1185,7 +1225,7 @@ function BlackHead(X, Y, variant=1){
     this.variant = variant;
     this.delayTimer = 0;
     this.aimPos = {DX: 0, DY: 0, MAG: 1};
-    this.animation = spriteAnimations.blackhead_idle;
+    this.animation = Object.create(spriteAnimations.blackhead_idle);
 }
 BlackHead.prototype = Object.create(Enemy.prototype);
 BlackHead.prototype.update = function(){
@@ -1423,7 +1463,6 @@ Canid.prototype.whenHit = function(){
     this.velocity.y *= -1.5;
     if(this.variant < 2){
         this.stunTimer += 40;
-        console.log("G");
     }else if(this.variant < 3){
         this.stunTimer += 10;
     }
@@ -1439,6 +1478,7 @@ function DoomFairy(X, Y, variant=1){
     }
     this.delayTimer = 0;
     this.isBoss = true;
+    this.animation = Object.create(spriteAnimations.forest_guard_roar);
 }
 DoomFairy.prototype = Object.create(Enemy.prototype);
 DoomFairy.prototype.update = function(){
@@ -1483,12 +1523,16 @@ DoomFairy.prototype.update = function(){
             sounds.pew.play();
         }
     }
+    if(this.delayTimer == 100){
+        this.animation = Object.create(spriteAnimations.forest_guard_idle);
+    }
     if(this.delayTimer > 240 && this.delayTimer < 245 && this.variant > 2){
         this.velocity.x = 0;
         this.velocity.y = 0;
     }
     if(this.delayTimer > 300){
         this.delayTimer = 0;
+        this.animation = Object.create(spriteAnimations.forest_guard_roar);
     }
     Enemy.prototype.update.call(this);
     if(this.dead){
@@ -1513,6 +1557,7 @@ DoomFairy.prototype.interact = function(obj){
             }
             sounds.rush.currentTime = 0;
             sounds.rush.play();
+            this.animation = Object.create(spriteAnimations.forest_guard_roar);
         }
     }
     Enemy.prototype.interact.call(this, obj);
@@ -1623,21 +1668,16 @@ function Hostile(X, Y, variant=1){
     this.rawForce = {x: 0, y: 0};
     this.aimPos = {DX: 0, DY: 0, MAG: 1};
     this.invinciTimer = 0;
+    this.animation = Object.create(spriteAnimations.hostile);
 }
 Hostile.prototype = Object.create(Enemy.prototype);
 Hostile.prototype.draw = function(){
     var CTX = GAME.context;
-    this.centerPosition();
-    var color = [100, 0, 0];
-    if(this.invinciTimer > 0 && this.invinciTimer < 10){
-        color = [100, this.invinciTimer % 2 * 150, this.invinciTimer % 2 * 150];
-    }else if(this.invinciTimer > 0){
-        color = [100 + this.invinciTimer % 2 * 155,
-                this.invinciTimer % 2 * 255, this.invinciTimer % 2 * 255];
+    if(this.invinciTimer > 0 && this.invinciTimer < 10 && this.invinciTimer % 2 == 0){
+        CTX.globalAlpha = 0;
     }
-    CTX.fillStyle = listToColor(color);
-    CTX.fillRect(-this.width/2, -this.height/2, this.width, this.height);
-    CTX.restore();
+    Enemy.prototype.draw.call(this);
+    CTX.globalAlpha = 1;
 }
 Hostile.prototype.update = function(obj){
     this.applyFriction();
@@ -1646,6 +1686,11 @@ Hostile.prototype.update = function(obj){
     }
     if(this.invinciTimer > 0){
        this.invinciTimer--;
+    }
+    if(this.rotation < 0){
+        this.rotation += 0.15;
+    }else if(this.rotation != 0){
+        this.rotation = 0;
     }
     if(this.position.x < 0){
         this.position.x = 0;
@@ -1701,6 +1746,7 @@ Hostile.prototype.interact = function(obj){
                 entities.push(b);
                 sounds.pew.currentTime = 0;
                 sounds.pew.play();
+                this.rotation = -Math.PI/2;
                 this.delayTimer -= 20;
             }
         }else if(Math.random() < 0.03 && this.position.x > 300 &&
@@ -1712,6 +1758,7 @@ Hostile.prototype.interact = function(obj){
             entities.push(b);
             sounds.pew.currentTime = 0;
             sounds.pew.play();
+            this.rotation = -Math.PI/2;
         }
     }
     var numberOfBullets = 0;
@@ -1949,7 +1996,6 @@ function Wall(X, Y, W, H, variant=1, XVel=-2, YVel=0){
     }
     this.hp = 999;
     this.velocity = {x: XVel, y: YVel};
-    console.log(this.velocity);
 }
 Wall.prototype = Object.create(UtilityObj.prototype);
 Wall.prototype.update = function(){
@@ -2088,7 +2134,7 @@ Player.prototype.update = function(){
         this.invinciTimer--;
     }
     if(this.rotation < 0){
-        this.rotation += 0.05;
+        this.rotation += 0.15;
     }else if(this.rotation != 0){
         this.rotation = 0;
     }
@@ -2202,7 +2248,7 @@ W_Peashooter.prototype.pewpew = function(){
     b.setUser(player);
     b.setVelocity(12, 0);
     entities.push(b);
-    player.rotation = -5 * Math.PI/8;
+    player.rotation = -0.7 * Math.PI;
     sounds.pew.currentTime = 0;
     sounds.pew.play();
 }
@@ -2221,7 +2267,7 @@ W_TripleShot.prototype.pewpew = function(){
         b.setVelocity(12 * Math.cos(i), -12 * Math.sin(i));
         entities.push(b);
     }
-    player.rotation = -5 * Math.PI/8;
+    player.rotation = -0.7 * Math.PI;
     sounds.pew.currentTime = 0;
     sounds.pew.play();
 }
@@ -2236,7 +2282,7 @@ W_Blaster.prototype.pewpew = function(){
     b.setUser(player);
     b.setVelocity(15, 0);
     entities.push(b);
-    player.rotation = -5 * Math.PI/8;
+    player.rotation = -0.7 * Math.PI;
     sounds.laserPew.currentTime = 0;
     sounds.laserPew.play();
 }
@@ -2251,7 +2297,7 @@ W_FireworkLauncher.prototype.pewpew = function(){
     b.setUser(player);
     b.setVelocity(12, 0);
     entities.push(b);
-    player.rotation = -5 * Math.PI/8;
+    player.rotation = -0.7 * Math.PI;
     sounds.pew.currentTime = 0;
     sounds.pew.play();
 }
@@ -2304,7 +2350,7 @@ W_ForceShooter.prototype.pewpew = function(){
     b.setUser(player);
     b.setVelocity(20, 0);
     entities.push(b);
-    player.rotation = -5 * Math.PI/8;
+    player.rotation = -0.7 * Math.PI;
 	sounds.weirdPew.currentTime = 0;
 	sounds.weirdPew.play();
 }
@@ -3665,11 +3711,22 @@ function main(){
         <img id="memory-tr1" class="img" src="./images/Memory-Triggered1.png" alt="It didn't work.">
         <img id="memory-tr2" class="img" src="./images/Memory-Triggered2.png" alt="It didn't work.">
         <img id="blackhead" class="img" src="./images/Blackhead.png" alt="It didn't work.">
+        <img id="blackhead2" class="img" src="./images/Blackhead2.png" alt="It didn't work.">
         <img id="whitehead" class="img" src="./images/Whitehead.png" alt="It didn't work.">
+        <img id="whitehead-laser" class="img" src="./images/Whitehead-Laser.png" alt="It didn't work.">
         <img id="blower" class="img" src="./images/Blower.png" alt="It didn't work.">
         <img id="headsplitter" class="img" src="./images/HeadSplitter.png" alt="It didn't work.">
         <img id="canid" class="img" src="./images/Canid.png" alt="It didn't work.">
         <img id="canid-hurt" class="img" src="./images/Canid-Hurt.png" alt="It didn't work.">
         <img id="snow" class="img" src="./images/Snow.png" alt="It didn't work.">
+        <img id="forest-guard-neutral" class="img" src="./images/ForestBoss-Neutral.png" alt="It didn't work.">
+        <img id="forest-guard-neutral2" class="img" src="./images/ForestBoss-Neutral2.png" alt="It didn't work.">
+        <img id="forest-guard-neutral3" class="img" src="./images/ForestBoss-Neutral3.png" alt="It didn't work.">
+        <img id="forest-guard-neutral4" class="img" src="./images/ForestBoss-Neutral4.png" alt="It didn't work.">
+        <img id="forest-guard-roar1" class="img" src="./images/ForestBoss-Roar1.png" alt="It didn't work.">
+        <img id="forest-guard-roar2" class="img" src="./images/ForestBoss-Roar2.png" alt="It didn't work.">
+        <img id="forest-guard-roar3" class="img" src="./images/ForestBoss-Roar3.png" alt="It didn't work.">
+        <img id="forest-guard-roar4" class="img" src="./images/ForestBoss-Roar4.png" alt="It didn't work.">
+        <img id="hostile" class="img" src="./images/Hate.png" alt="It didn't work.">
     </body>
 </html>
