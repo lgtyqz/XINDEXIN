@@ -278,10 +278,54 @@ function setSprites(){
                     new Sprite("forest-guard-roar2", [1, 1]),
                     ],
                     6, true),
+        lonely_idle: new Animation([
+                    new Sprite("lonely-neutral", [1, 1]),
+                    ],
+                    1, false),
+        lonely_pump: new Animation([
+                    new Sprite("lonely-neutral", [1, 1]),
+                    new Sprite("lonely-blink2", [1, 1]),
+                    new Sprite("lonely-blink3", [1, 1]),
+                    new Sprite("lonely-blink2", [1, 1]),
+                    ],
+                    5, true),
+        lonely_rollF: new Animation([
+                    new Sprite("lonely-neutral", [1, 1]),
+                    new Sprite("lonely-neutral2", [1, 1]),
+                    new Sprite("lonely-neutral3", [1, 1]),
+                    new Sprite("lonely-neutral4", [1, 1]),
+                    new Sprite("lonely-neutral5", [1, 1]),
+                    new Sprite("lonely-neutral6", [1, 1]),
+                    ],
+                    8, true),
+        lonely_rollB: new Animation([
+                    new Sprite("lonely-neutral6", [1, 1]),
+                    new Sprite("lonely-neutral5", [1, 1]),
+                    new Sprite("lonely-neutral4", [1, 1]),
+                    new Sprite("lonely-neutral3", [1, 1]),
+                    new Sprite("lonely-neutral2", [1, 1]),
+                    new Sprite("lonely-neutral", [1, 1]),
+                    ],
+                    25, true),
         hostile: new Animation([
                     new Sprite("hostile", [1, 1]),
                     ],
                     1, false),
+        zero: new Animation([
+                    new Sprite("zero1", [1, 1]),
+                    new Sprite("zero2", [1, 1]),
+                    new Sprite("zero3", [1, 1]),
+                    new Sprite("zero4", [1, 1]),
+                    new Sprite("zero5", [1, 1]),
+                    new Sprite("zero6", [1, 1]),
+                    new Sprite("zero7", [1, 1]),
+                    new Sprite("zero8", [1, 1]),
+                    new Sprite("zero9", [1, 1]),
+                    new Sprite("zero10", [1, 1]),
+                    new Sprite("zero11", [1, 1]),
+                    new Sprite("zero12", [1, 1]),
+                    ],
+                    3, true),
     };
     for(var i in spriteAnimations){
         spriteAnimations[i].init();
@@ -1575,6 +1619,7 @@ function Blazer(X, Y, variant=1){
     this.movingLeft = true;
     this.isBoss = true;
     this.sprayDuration = 150;
+    this.animation = Object.create(spriteAnimations.lonely_rollF);
 }
 Blazer.prototype = Object.create(Enemy.prototype);
 Blazer.prototype.update = function(){
@@ -1603,6 +1648,12 @@ Blazer.prototype.update = function(){
         sounds.laserPew.currentTime = 0;
         sounds.laserPew.play();
     }
+    if(this.delayTimer == 75){
+        this.animation = Object.create(spriteAnimations.lonely_idle);
+    }
+    if(this.delayTimer == 125){
+        this.animation = Object.create(spriteAnimations.lonely_pump);
+    }
     if(this.delayTimer > 125 &&
     this.delayTimer < 125 + this.sprayDuration &&
     ((this.delayTimer % 2 == 0 && this.variant > 2) ||
@@ -1628,6 +1679,9 @@ Blazer.prototype.update = function(){
     if(this.delayTimer > 125 + this.sprayDuration){
         if(this.variant > 1 || this.delayTimer > 400){
             this.delayTimer = 0;
+            this.animation = Object.create(spriteAnimations.lonely_rollF);
+        }else if(this.delayTimer == 126 + this.sprayDuration){
+            this.animation = Object.create(spriteAnimations.lonely_rollB);
         }
     }
     Enemy.prototype.update.call(this);
@@ -1833,16 +1887,9 @@ function PatientZero(X, Y, variant=1){
     this.windTimer = 0;
     this.seed = Math.random();
     this.nextPhase = 1;
+    this.animation = Object.create(spriteAnimations.zero);
 }
 PatientZero.prototype = Object.create(Enemy.prototype);
-PatientZero.prototype.draw = function(){
-    var CTX = GAME.context;
-    this.centerPosition();
-    var color = [this.color[0], this.color[1], this.color[2]];
-    CTX.fillStyle = listToColor(color);
-    CTX.fillRect(-this.width/2, -this.height/2, this.width, this.height);
-    CTX.restore();
-}
 PatientZero.prototype.update = function(){
     this.applyFriction();
     var shieldActive = false;
@@ -2273,7 +2320,7 @@ W_TripleShot.prototype.pewpew = function(){
 }
 
 function W_Blaster(){
-    PWeapon.call(this, "Power Blaster", 30);
+    PWeapon.call(this, "Power Blaster", 32);
 }
 W_Blaster.prototype = Object.create(PWeapon.prototype);
 W_Blaster.prototype.pewpew = function(){
@@ -3727,6 +3774,26 @@ function main(){
         <img id="forest-guard-roar2" class="img" src="./images/ForestBoss-Roar2.png" alt="It didn't work.">
         <img id="forest-guard-roar3" class="img" src="./images/ForestBoss-Roar3.png" alt="It didn't work.">
         <img id="forest-guard-roar4" class="img" src="./images/ForestBoss-Roar4.png" alt="It didn't work.">
+        <img id="lonely-blink2" class="img" src="./images/CityBoss-Blink2.png" alt="It didn't work.">
+        <img id="lonely-blink3" class="img" src="./images/CityBoss-Blink3.png" alt="It didn't work.">
+        <img id="lonely-neutral" class="img" src="./images/CityBoss-Neutral.png" alt="It didn't work.">
+        <img id="lonely-neutral2" class="img" src="./images/CityBoss-Neutral2.png" alt="It didn't work.">
+        <img id="lonely-neutral3" class="img" src="./images/CityBoss-Neutral3.png" alt="It didn't work.">
+        <img id="lonely-neutral4" class="img" src="./images/CityBoss-Neutral4.png" alt="It didn't work.">
+        <img id="lonely-neutral5" class="img" src="./images/CityBoss-Neutral5.png" alt="It didn't work.">
+        <img id="lonely-neutral6" class="img" src="./images/CityBoss-Neutral6.png" alt="It didn't work.">
         <img id="hostile" class="img" src="./images/Hate.png" alt="It didn't work.">
+        <img id="zero1" class="img" src="./images/PatientZero-1.png" alt="It didn't work.">
+        <img id="zero2" class="img" src="./images/PatientZero-2.png" alt="It didn't work.">
+        <img id="zero3" class="img" src="./images/PatientZero-3.png" alt="It didn't work.">
+        <img id="zero4" class="img" src="./images/PatientZero-4.png" alt="It didn't work.">
+        <img id="zero5" class="img" src="./images/PatientZero-5.png" alt="It didn't work.">
+        <img id="zero6" class="img" src="./images/PatientZero-6.png" alt="It didn't work.">
+        <img id="zero7" class="img" src="./images/PatientZero-7.png" alt="It didn't work.">
+        <img id="zero8" class="img" src="./images/PatientZero-8.png" alt="It didn't work.">
+        <img id="zero9" class="img" src="./images/PatientZero-9.png" alt="It didn't work.">
+        <img id="zero10" class="img" src="./images/PatientZero-10.png" alt="It didn't work.">
+        <img id="zero11" class="img" src="./images/PatientZero-11.png" alt="It didn't work.">
+        <img id="zero12" class="img" src="./images/PatientZero-12.png" alt="It didn't work.">
     </body>
 </html>
