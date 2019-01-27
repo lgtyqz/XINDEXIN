@@ -76,7 +76,10 @@ var GAME = {
     },
     restart: function(){
         entities = [];
-        player = new Player(0, 0, 30, 30);
+        backgroundTiles = [];
+        backgroundTimer = 0;
+        spawnedStart = false;
+        player = new Player(30, GAME.canvas.height/2 - 15, 30, 30);
         rWeapons.sort( function() { return 0.5 - Math.random() } );
         player.weapons = [rWeapons[5], rWeapons[1], rWeapons[3]];
         GAME.load();
@@ -86,6 +89,15 @@ var GAME = {
             musics[i].pause();
         }
         musics[GAME.level].play();
+    },
+    nextLevel: function(){
+        GAME.level++;
+        GAME.frameCount = 0;
+        backgroundTimer = 0;
+        player.hp = 3;
+        GAME.handleBGM();
+        sounds.bossDeath.play();
+        GAME.save();
     },
     frameCount: 0,
     gravity: 1,
@@ -137,7 +149,8 @@ var sounds = {
     wallBlock: new Audio("./sfx/wallreflect.ogg"),
     no: new Audio("./sfx/no.ogg"),
     bulletScreen: new Audio("./sfx/bulletscreen.ogg"),
-    enter: new Audio("./sfx/enter.ogg")
+    enter: new Audio("./sfx/enter.ogg"),
+    bark: new Audio("./sfx/bark.ogg"),
 }
 var musics = [
     new Audio("./music/Blank.ogg"), //Menu
@@ -326,6 +339,17 @@ function setSprites(){
                     new Sprite("zero12", [1, 1]),
                     ],
                     3, true),
+        wall: new Animation([
+                    new Sprite("wall", [1, 1]),
+                    ],
+                    1, false),
+        reflectorWall: new Animation([
+                    new Sprite("reflector1", [1, 1]),
+                    new Sprite("reflector2", [1, 1]),
+                    new Sprite("reflector3", [1, 1]),
+                    new Sprite("reflector4", [1, 1]),
+                    ],
+                    25, true),
     };
     for(var i in spriteAnimations){
         spriteAnimations[i].init();
@@ -1486,8 +1510,10 @@ Canid.prototype.interact = function(obj){
         var dx = obj.position.x - this.position.x;
         var dy = obj.position.y - this.position.y;
         var mag = Math.sqrt(dx ** 2 + dy ** 2);
-        if(this.delayTimer == 30){
+        if(this.delayTimer == 30 && this.stunTimer == 0){
             this.aimPos = {DX: dx, DY: dy, MAG: mag};
+            sounds.bark.currentTime = 0;
+            sounds.bark.play();
         }
         if(this.delayTimer > 40){
             this.delayTimer = 0;
@@ -1580,12 +1606,7 @@ DoomFairy.prototype.update = function(){
     }
     Enemy.prototype.update.call(this);
     if(this.dead){
-        GAME.level++;
-        GAME.frameCount = 0;
-        player.hp = 3;
-        GAME.handleBGM();
-        sounds.bossDeath.play();
-        GAME.save();
+        GAME.nextLevel();
     }
 }
 DoomFairy.prototype.interact = function(obj){
@@ -1686,12 +1707,7 @@ Blazer.prototype.update = function(){
     }
     Enemy.prototype.update.call(this);
     if(this.dead){
-        GAME.level++;
-        GAME.frameCount = 0;
-        player.hp = 3;
-        GAME.handleBGM();
-        sounds.bossDeath.play();
-        GAME.save();
+        GAME.nextLevel();
     }
 }
 Blazer.prototype.interact = function(obj){
@@ -1764,12 +1780,7 @@ Hostile.prototype.update = function(obj){
     }
     Enemy.prototype.update.call(this);
     if(this.dead){
-        GAME.level++;
-        GAME.frameCount = 0;
-        player.hp = 3;
-        GAME.handleBGM();
-        sounds.bossDeath.play();
-        GAME.save();
+        GAME.nextLevel();
     }
 }
 Hostile.prototype.interact = function(obj){
@@ -2038,8 +2049,10 @@ function Wall(X, Y, W, H, variant=1, XVel=-2, YVel=0){
     UtilityObj.call(this, X, Y, W, H);
     this.variant = variant;
     this.color = [0, 0, 0];
+    this.animation = Object.create(spriteAnimations.wall);
     if(this.variant > 1){
         this.color = [100, 0, 255];
+        this.animation = Object.create(spriteAnimations.reflectorWall);
     }
     this.hp = 999;
     this.velocity = {x: XVel, y: YVel};
@@ -2267,6 +2280,69 @@ function drawForeground(){
         }
         CTX.fillRect(15, 75,
                 3 * boss.hp, 15);
+    }
+}
+
+var BGs = [  //Who ya gonna call? Not the Bee Geeeees
+    "cityBG",
+    "forestBG",
+    "cityBG",
+    "mountainBG",
+    "labBG",
+];
+var backgroundTiles = [];
+var backgroundTimer = 0;
+var spawnedStart = false;
+
+function BackgroundTile(imageSrc, X, XVel=-2){
+    this.position = {x: X, y: 0};
+    this.imageSrc = imageSrc;
+    this.xVel = XVel;
+    this.dead = false;
+    this.initImage = function(){
+        this.image = document.getElementById(this.imageSrc);
+        //console.log(this.image);
+    }
+    this.draw = function(left, top, width, height){
+        //console.log("Good to go!");
+        GAME.context.drawImage(this.image,
+                                this.position.x, 0,
+                                GAME.canvas.width,
+                                GAME.canvas.height);
+        if(this.position.x + GAME.canvas.width < 0){
+            this.dead = true;
+        }
+        this.position.x += this.xVel;
+    }
+}
+
+function spawnBackground(){
+    if(backgroundTimer == 0 && GAME.level > 0 &&
+        Number.isInteger(GAME.level)){
+        console.log("NUTILE");
+        var b = new BackgroundTile(BGs[GAME.level], GAME.canvas.width);
+        b.initImage();
+        backgroundTiles.push(b);
+        backgroundTimer = 600;
+        if(!spawnedStart){
+            var b = new BackgroundTile(BGs[GAME.level], GAME.canvas.width);
+            b.initImage();
+            b.position.x = 0;
+            backgroundTiles.push(b);
+            spawnedStart = true;
+        }
+    }
+    if(backgroundTimer > 0){
+        backgroundTimer--;
+    }
+}
+
+function drawBackground(){
+    for(var i = 0; i < backgroundTiles.length; i++){
+        backgroundTiles[i].draw();
+        if(backgroundTiles[i].dead){
+            backgroundTiles.splice(i, 1);
+        }
     }
 }
 
@@ -3694,6 +3770,8 @@ function main(){
     }
     GAME.context.fillRect(-GAME.canvas.width * 3, -GAME.canvas.height * 3,
     GAME.canvas.width * 6, GAME.canvas.height * 6);
+    spawnBackground();
+    drawBackground();
     player.update();
     if(GAME.level == 3){
         player.applyForce(-0.2, 0);
@@ -3795,5 +3873,14 @@ function main(){
         <img id="zero10" class="img" src="./images/PatientZero-10.png" alt="It didn't work.">
         <img id="zero11" class="img" src="./images/PatientZero-11.png" alt="It didn't work.">
         <img id="zero12" class="img" src="./images/PatientZero-12.png" alt="It didn't work.">
+        <img id="wall" class="img" src="./images/Wall.png" alt="It didn't work.">
+        <img id="reflector1" class="img" src="./images/Reflector1.png" alt="It didn't work.">
+        <img id="reflector2" class="img" src="./images/Reflector2.png" alt="It didn't work.">
+        <img id="reflector3" class="img" src="./images/Reflector3.png" alt="It didn't work.">
+        <img id="reflector4" class="img" src="./images/Reflector4.png" alt="It didn't work.">
+        <img id="forestBG" class="img" src="./images/ForestBG.png" alt="It didn't work.">
+        <img id="cityBG" class="img" src="./images/CityBG.png" alt="It didn't work.">
+        <img id="mountainBG" class="img" src="./images/MountainBG.png" alt="It didn't work.">
+        <img id="labBG" class="img" src="./images/LabBG.png" alt="It didn't work.">
     </body>
 </html>
