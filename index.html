@@ -151,6 +151,7 @@ var sounds = {
     bulletScreen: new Audio("./sfx/bulletscreen.ogg"),
     enter: new Audio("./sfx/enter.ogg"),
     bark: new Audio("./sfx/bark.ogg"),
+    shieldBreak: new Audio("./sfx/shieldbreak.ogg"),
 }
 var musics = [
     new Audio("./music/Blank.ogg"), //Menu
@@ -590,6 +591,22 @@ LeftistBullet.prototype = Object.create(Bullet.prototype);
 LeftistBullet.prototype.update = function(){
     this.applyForce(-0.25, 0);
     Bullet.prototype.update.call(this);
+}
+
+function ShieldBreaker(X, Y){
+    Bullet.call(this, X, Y, 10, 10);
+    this.color = [100, 0, 255];
+}
+ShieldBreaker.prototype = Object.create(Bullet.prototype);
+ShieldBreaker.prototype.interact = function(obj){
+    if(this.collides(obj) && obj instanceof Shield &&
+    !(obj instanceof WindScreen)){
+        obj.dead = true;
+        obj.user.invinciTimer = 0;
+        sounds.shieldBreak.currentTime = 0;
+        sounds.shieldBreak.play();
+    }
+    Bullet.prototype.interact.call(this, obj);
 }
 
 function PowerBullet(X, Y){
@@ -1882,7 +1899,7 @@ function PatientZero(X, Y, variant=1){
     this.hp = 100;
     this.variant = variant;
     if(this.variant > 1){
-        this.hp = 150;
+        this.hp = 125;
     }
     this.delayTimer = 100;
     //0: IDLE
@@ -1959,9 +1976,17 @@ PatientZero.prototype.update = function(){
             for(var i = 0; i < 3; i++){
                 var b = new Bullet(this.position.x + this.width/2,
                                     this.position.y + this.height/2, 10, 10);
+                if(this.variant > 1){
+                    b = new ShieldBreaker(this.position.x + this.width/2,
+                                    this.position.y + this.height/2);
+                }
                 b.setUser(this);
-                b.setVelocity(-2 + 4 * Math.cos(i * 2 * Math.PI/3 + (this.delayTimer/200 + this.seed) * 2 * Math.PI),
-                            4 * Math.sin(i * 2 * Math.PI/3 + (this.delayTimer/200 + this.seed) * 2 * Math.PI));
+                var mult = 4;
+                if(this.variant > 1){
+                    mult = 5;
+                }
+                b.setVelocity(-2 + mult * Math.cos(i * 2 * Math.PI/3 + (this.delayTimer/200 + this.seed) * 2 * Math.PI),
+                            mult * Math.sin(i * 2 * Math.PI/3 + (this.delayTimer/200 + this.seed) * 2 * Math.PI));
                 entities.push(b);
                 sounds.pew.currentTime = 0;
                 sounds.pew.play();
@@ -1982,9 +2007,13 @@ PatientZero.prototype.update = function(){
         this.position.x = GAME.canvas.width - this.width;
         this.applyForce(0.5, 0);
         if(this.delayTimer % 35 == 0){
+            var gap = 80;
+            if(this.variant > 1){
+                gap = 75;
+            }
             for(var i = -8; i < 8; i++){
                 var b = new Bullet(1159,
-                            this.position.y + this.height/2 + i * 80
+                            this.position.y + this.height/2 + i * gap
                 + 50 * Math.sin(GAME.frameCount/20), 10, 10);
                 b.setUser(this);
                 b.setVelocity(-8, 0);
@@ -1997,15 +2026,37 @@ PatientZero.prototype.update = function(){
     this.delayTimer--;
     Enemy.prototype.update.call(this);
     if(this.dead){
-        alert("winner winner chicken dinner");
-        alert("Press Shift-R to reset your progress.");
-        alert("Also, this time around, press 2 for Hard Mode.");
-        GAME.level = 0;
-        GAME.frameCount = 0;
-        player.hp = 3;
-        GAME.difficulty = 1;
-        GAME.handleBGM();
-        sounds.bossDeath.play();
+        if(GAME.difficulty == 0){
+            alert("Good job! You beat the game.");
+            alert("Now it's time for a REAL challenge...");
+            alert("Hard Mode.");
+            GAME.level = 1;
+            GAME.frameCount = 0;
+            player.hp = 3;
+            GAME.difficulty = 1;
+            entities = [];
+            backgroundTiles = [];
+            spawnedStart = false;
+            GAME.save();
+            GAME.level = 0;
+            GAME.handleBGM();
+            sounds.bossDeath.play();
+        }else{
+            alert("Good job! You beat the game. Again.");
+            alert("Press Shift-R to restart your progress.");
+            alert("Or you can play through the first 3 levels of Extreme");
+            GAME.level = 1;
+            GAME.frameCount = 0;
+            player.hp = 3;
+            GAME.difficulty = 2;
+            entities = [];
+            backgroundTiles = [];
+            spawnedStart = false;
+            GAME.save();
+            GAME.level = 0;
+            GAME.handleBGM();
+            sounds.bossDeath.play();
+        }
     }
 }
 PatientZero.prototype.interact = function(obj){
@@ -2019,6 +2070,10 @@ PatientZero.prototype.interact = function(obj){
             var b = new Bullet(this.position.x + this.width/2,
                                 this.position.y + this.height/2, 10, 10,
                                 [255, 0, 0]);
+            if(this.variant > 1 && this.delayTimer % 20 == 0){
+                b = new ShieldBreaker(this.position.x + this.width/2,
+                                this.position.y + this.height/2);
+            }
             b.setUser(this);
             b.setVelocity(12 * this.aimPos.DX/this.aimPos.MAG,
                         12 * this.aimPos.DY/this.aimPos.MAG);
@@ -2319,7 +2374,6 @@ function BackgroundTile(imageSrc, X, XVel=-2){
 function spawnBackground(){
     if(backgroundTimer == 0 && GAME.level > 0 &&
         Number.isInteger(GAME.level)){
-        console.log("NUTILE");
         var b = new BackgroundTile(BGs[GAME.level], GAME.canvas.width);
         b.initImage();
         backgroundTiles.push(b);
@@ -3189,14 +3243,14 @@ function spawnEntities(){
                 }
             }else if(GAME.frameCount < 2500){
                 if(GAME.frameCount % 250 == 0){
-                    entities.push(new DemonShape(1199, 200 + Math.random() * (200 - 65), 1));
+                    entities.push(new DemonShape(1199, 200 + Math.random() * (200 - 65), 2));
                 }
             }else if(GAME.frameCount < 5000){
                 if(GAME.frameCount % 350 == 0){
                     if(GAME.frameCount % 250 >= 100){
-                        entities.push(new DemonShape(1199, Math.random() * 550, 1));
+                        entities.push(new DemonShape(1199, Math.random() * 550, 2));
                     }else{
-                        entities.push(new DemonShape(1199, 200 + Math.random() * (200 - 65), 1));
+                        entities.push(new DemonShape(1199, 200 + Math.random() * (200 - 65), 2));
                     }
                 }
                 if(GAME.frameCount % 200 == 0){
@@ -3219,7 +3273,7 @@ function spawnEntities(){
                     }
                 }
                 if(GAME.frameCount % 400 == 0){
-                    entities.push(new DemonShape(1199, 200 + Math.random() * (200 - 65), 1));
+                    entities.push(new DemonShape(1199, 200 + Math.random() * (200 - 65), 2));
                 }
                 if(GAME.frameCount % 500 == 0){
                     entities.push(new Memory(1199, 280, 1));
@@ -3237,13 +3291,13 @@ function spawnEntities(){
             }else if(GAME.frameCount < 10000){
                 if(GAME.frameCount % 300 == 0){
                     if(GAME.frameCount % 400 >= 100){
-                        entities.push(new Lost(1199, Math.random() * 550, 2));
+                        entities.push(new Lost(1199, Math.random() * 550, 3));
                     }else{
-                        entities.push(new Lost(1199, 200 + Math.random() * 150, 2));
+                        entities.push(new Lost(1199, 200 + Math.random() * 150, 3));
                     }
                 }
                 if(GAME.frameCount % 550 == 0){
-                    entities.push(new DemonShape(1199, 200 + Math.random() * (200 - 65), 1));
+                    entities.push(new DemonShape(1199, 200 + Math.random() * (200 - 65), 2));
                 }
                 if(GAME.frameCount % 500 == 0){
                     entities.push(new Memory(1199, 280, 1));
@@ -3259,7 +3313,7 @@ function spawnEntities(){
                 }
             }
             if(GAME.frameCount == 10000){
-                entities.push(new Blazer(1199, 260, 1));
+                entities.push(new Blazer(1199, 260, 2));
             }
         }else if(GAME.level == 3){
             if(GAME.frameCount == 0){
@@ -3386,7 +3440,7 @@ function spawnEntities(){
                 }
             }else if(GAME.frameCount < 5000){
                 if(GAME.frameCount % 300 == 0){
-                    entities.push(new HeadSplitter(1199, Math.random() * 550, 1));
+                    entities.push(new HeadSplitter(1199, Math.random() * 550, 3));
                 }
                 if(GAME.frameCount % 800 == 700){
                     entities.push(new CrossShot(1199, Math.random() * 550, 3));
@@ -3412,8 +3466,8 @@ function spawnEntities(){
                 if(GAME.frameCount % 150 == 0){
                     entities.push(new Memory(1199, Math.random() * 550, 3));
                 }
-                if(GAME.frameCount % 500 == 300){
-                    entities.push(new Mirage(800, Math.random() * 550, 3));
+                if(GAME.frameCount % 301 == 300){
+                    entities.push(new Mirage(1199, Math.random() * 550, 3));
                 }
             }else if(GAME.frameCount < 10000 && GAME.frameCount > 9000){
                 if(GAME.frameCount % 250 == 0){
@@ -3436,7 +3490,7 @@ function spawnEntities(){
                     entities.push(new Lost(1199, Math.random() * 550, 3));
                 }
                 if(GAME.frameCount % 450 == 0){
-                    entities.push(new HeadSplitter(1199, Math.random() * 550, 2));
+                    entities.push(new HeadSplitter(1199, Math.random() * 550, 3));
                 }
             }
             if(GAME.frameCount > 12000 && !remaining){
