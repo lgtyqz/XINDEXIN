@@ -152,6 +152,9 @@ var sounds = {
     enter: new Audio("./sfx/enter.ogg"),
     bark: new Audio("./sfx/bark.ogg"),
     shieldBreak: new Audio("./sfx/shieldbreak.ogg"),
+    gong: new Audio("./sfx/gong.ogg"),
+    metalBark: new Audio("./sfx/metalbark.ogg"),
+    birdScream: new Audio("./sfx/birdscream.ogg"), 
 }
 var musics = [
     new Audio("./music/Blank.ogg"), //Menu
@@ -595,14 +598,15 @@ LeftistBullet.prototype.update = function(){
 
 function ShieldBreaker(X, Y){
     Bullet.call(this, X, Y, 10, 10);
-    this.color = [100, 0, 255];
+    this.color = [255, 100, 255];
 }
 ShieldBreaker.prototype = Object.create(Bullet.prototype);
 ShieldBreaker.prototype.interact = function(obj){
     if(this.collides(obj) && obj instanceof Shield &&
     !(obj instanceof WindScreen)){
         obj.dead = true;
-        obj.user.invinciTimer = 0;
+        obj.user.invinciTimer -= 10;
+        obj.user.invinciTimer = Math.max(0, obj.user.invinciTimer);
         sounds.shieldBreak.currentTime = 0;
         sounds.shieldBreak.play();
     }
@@ -1028,6 +1032,8 @@ Raven.prototype.whenHit = function(){
             b.setVelocity(2 * Math.cos(i), 2 * Math.sin(i));
             entities.push(b);
         }
+        sounds.birdScream.currentTime = 0;
+        sounds.birdScream.play();
     }
 }
 
@@ -1609,6 +1615,8 @@ Charger.prototype.interact = function(obj){
                 entities.push(s);
                 sounds.shieldStart.currentTime = 0;
                 sounds.shieldStart.play();
+                sounds.rush.currentTime = 0;
+                sounds.rush.play();
             }
         }
     }
@@ -1633,6 +1641,9 @@ Gong.prototype.update = function(){
     }else{
         this.applyForce(1, 0);
     }
+    if(this.position.x > GAME.canvas.width * 0.9){
+        this.applyForce(-4, 0);
+    }
     if(this.width > 40){
         this.sizeVel -= 0.5;
     }else if(this.width < 40){
@@ -1653,22 +1664,172 @@ Gong.prototype.update = function(){
             b.setVelocity(-1.845 + 7 * Math.cos(i), 7 * -Math.sin(i));
             entities.push(b);
         }
-        this.delayTimer = 200;
+        sounds.mehPew.currentTime = 0;
+        sounds.mehPew.play();
+        this.delayTimer = 225;
     }
     Enemy.prototype.update.call(this);
 }
 Gong.prototype.whenHit = function(){
-    this.sizeVel -= 4;
+    this.sizeVel -= 6;
     for(var i = Math.PI/4; i < 2*Math.PI + Math.PI/4 + 0.0001; i += Math.PI/2){
         var b = new Bullet(
             this.position.x + this.width/2 - 7.5 + 41 * Math.cos(i),
             this.position.y + this.height/2 - 7.5 - 41 * Math.sin(i),
-            15, 15, [255, 0, 0]);
+            15, 15, [100, 0, 0]);
         b.setUser(this);
         b.setVelocity(-1.845 + 13 * Math.cos(i), 13 * -Math.sin(i));
         entities.push(b);
     }
+    sounds.gong.currentTime = 0;
+    sounds.gong.play();
 }
+
+function Genex(X, Y, variant=1){
+    Enemy.call(this, X, Y, 30, 30);
+    this.color = [128, 255, 255];
+    this.hp = 6;
+    this.velocity = {x: 0, y: 0};
+    this.variant = variant;
+    this.delayTimer = 0;
+    this.aimPos = {DX: 0, DY: 0, MAG: 1};
+    this.initialShield = true;
+}
+Genex.prototype = Object.create(Enemy.prototype);
+Genex.prototype.update = function(){
+    this.applyFriction();
+    if(this.position.y < 0){
+        this.position.y = 0;
+        this.velocity.y *= -1;
+    }
+    if(this.position.y + this.height > GAME.canvas.height){
+        this.position.y = GAME.canvas.height - this.height;
+        this.velocity.y *= -1;
+    }
+    this.delayTimer++;
+    Enemy.prototype.update.call(this);
+    if(this.invinciTimer > 0){
+        if(this.dead){
+            this.dead = false;
+            this.hp = 1;
+        }
+        this.invinciTimer--;
+    }
+}
+Genex.prototype.interact = function(obj){
+    if(obj instanceof Player){
+        var dx = obj.position.x - this.position.x;
+        var dy = obj.position.y - this.position.y;
+        var mag = Math.sqrt(dx ** 2 + dy ** 2);
+        if(this.delayTimer % 35 == 0){
+            this.aimPos = {DX: dx, DY: dy, MAG: mag};
+            sounds.metalBark.currentTime = 0;
+            sounds.metalBark.play();
+        }
+        if(this.delayTimer % 35 < 5){
+            this.applyForce(6 * this.aimPos.DX/this.aimPos.MAG, 6 *
+            this.aimPos.DY/this.aimPos.MAG);
+        }
+        /*if(this.delayTimer % 30 == 0){
+            var b = new Bullet(this.position.x + this.width/2,
+                                this.position.y + this.height/2, 10, 10,
+                                [0, 0, 0]);
+            b.setUser(this);
+            b.setVelocity(-7 * dx/mag, -7 * dy/mag);
+            entities.push(b);
+            sounds.pew.currentTime = 0;
+            sounds.pew.play();
+        }*/
+    }
+    Enemy.prototype.interact.call(this, obj);
+}
+Genex.prototype.whenHit = function(){
+    if(this.initialShield){
+        this.hp = 1;
+        this.dead = false;
+        this.initialShield = false;
+        this.invinciTimer = 10;
+        this.color = [128, 255, 128];
+        this.velocity.x *= -1.5;
+        this.velocity.y *= -1.5;
+    }
+}
+function Soulja(X, Y, variant=1){
+    Enemy.call(this, X, Y, 35, 35);
+    this.color = [0, 128, 0];
+    this.hp = 6;
+    this.velocity = {x: 0, y: 0};
+    this.variant = variant;
+    this.aimPos = {DX: 0, DY: 0, MAG: 1};
+    this.delayTimer = 0;
+}
+Soulja.prototype = Object.create(Enemy.prototype);
+Soulja.prototype.update = function(){
+    this.applyFriction();
+    this.delayTimer++;
+    if(this.position.x > GAME.canvas.width * 0.95){
+        this.applyForce(-3, 0);
+    }
+    Enemy.prototype.update.call(this);
+}
+Soulja.prototype.interact = function(obj){
+    this.rawForce = {x: 0, y: 0};
+    if(obj instanceof Player){
+        if(this.delayTimer % 25 == 0){
+            this.aimPos.DX = obj.position.x - this.position.x + 150;
+            this.aimPos.DY = obj.position.y - this.position.y;
+            this.aimPos.MAG = Math.sqrt(this.aimPos.DX ** 2 +
+                                this.aimPos.DY ** 2);
+        }
+        this.rawForce.x += 0.2 * this.aimPos.DX/this.aimPos.MAG;
+        this.rawForce.y += 0.2 * this.aimPos.DY/this.aimPos.MAG;
+        if(this.delayTimer % 75 == 0){
+            var b = new ShieldBreaker(this.position.x + this.width/2,
+                                this.position.y + this.height/2, 10, 10,
+                                [255, 0, 0]);
+            b.setUser(this);
+            b.setVelocity(13 * this.aimPos.DX/this.aimPos.MAG,
+            13 * this.aimPos.DY/this.aimPos.MAG);
+            entities.push(b);
+            sounds.laserPew.currentTime = 0;
+            sounds.laserPew.play();
+        }
+    var numberOfBullets = 0;
+    for(var i = 0; i < entities.length; i++){
+        if(entities[i] instanceof Bullet &&
+        !(entities[i].user instanceof Enemy)){
+            numberOfBullets++;
+        }
+    }
+    if(numberOfBullets > 0){
+        for(var i = 0; i < entities.length; i++){
+            if(entities[i] instanceof Bullet &&
+            !(entities[i].user instanceof Enemy)){
+                var dx = entities[i].position.x +
+                        entities[i].velocity.x * 8 -
+                        this.position.x - this.velocity.x * 8;
+                var dy = entities[i].position.y +
+                        entities[i].velocity.y * 8 -
+                        this.position.y - this.velocity.y * 8;
+                var mag = Math.sqrt(dx ** 2 + dy ** 2);
+                if(mag < 15 * Math.sqrt(entities[i].velocity.x ** 2 +
+                        entities[i].velocity.y ** 2)){
+                    this.rawForce.x -= dx/mag * 1/numberOfBullets;
+                    this.rawForce.y -= dy/mag * 1/numberOfBullets;
+                }
+            }
+        }
+    }
+    var fMag = Math.sqrt(this.rawForce.x ** 2 + this.rawForce.y ** 2);
+    if(fMag > 0){
+        var powerLevel = 1.8 * (1 - ((this.delayTimer + 37) % 75)/75);
+        this.applyForce(powerLevel * this.rawForce.x/fMag,
+                        powerLevel * this.rawForce.y/fMag);
+    }
+    Enemy.prototype.interact.call(this, obj);
+    }
+}
+
 
 function DoomFairy(X, Y, variant=1){
     Enemy.call(this, X, Y, 80, 80);
@@ -3917,14 +4078,28 @@ function spawnEntities(){
             }
             if(GAME.frameCount < 750){
                 if(GAME.frameCount % 350 == 0){
-                    entities.push(new Gong(1199, Math.random() * 550));
+                    entities.push(new Soulja(1199, Math.random() * 550));
                 }
             }else if(GAME.frameCount < 1500){
-                if(GAME.frameCount % 300 == 100){
+                if(GAME.frameCount % 75 == 0){
+                    entities.push(new Genex(1199, Math.random() * 550));
+                }
+            }else if(GAME.frameCount < 3500){
+                if(GAME.frameCount % 350 == 0){
                     entities.push(new Gong(1199, Math.random() * 550));
                 }
-                if(GAME.frameCount % 250 == 100){
-                    entities.push(new Lost(1199, Math.random() * 550, 3));
+                if(GAME.frameCount % 11 == 0 && GAME.frameCount > 3000){
+                    entities.push(new Bat(1199, Math.random() * 550, 2));
+                }
+                if(GAME.frameCount % 11 == 6 && GAME.frameCount > 3000){
+                    entities.push(new Bat(1199, Math.random() * 550, 1));
+                }
+            }else if(GAME.frameCount < 4500){
+                if(GAME.frameCount % 100 == 0){
+                    entities.push(new Genex(1199, Math.random() * 550, 3));
+                }
+                if(GAME.frameCount % 350 == 200){
+                    entities.push(new Gong(1199, Math.random() * 550));
                 }
             }
         }
