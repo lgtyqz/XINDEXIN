@@ -27,6 +27,10 @@ var GAME = {
         this.context = this.canvas.getContext("2d");
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         //this.load();
+        if(localStorage.Shooter != ""){
+            var gameData = JSON.parse(localStorage.Shooter);
+            this.completedNormal = Boolean(gameData.completedNormal);
+        }
     },
     activate: function(){
         this.interval = setInterval(main, 20);
@@ -55,7 +59,8 @@ var GAME = {
             frameCount: GAME.frameCount,
             level: GAME.level,
             hp: player.hp,
-            difficulty: GAME.difficulty
+            difficulty: GAME.difficulty,
+            completedNormal: GAME.completedNormal
         };
         localStorage.Shooter = JSON.stringify(gameData);
     },
@@ -66,6 +71,7 @@ var GAME = {
             this.level = gameData.level;
             player.hp = gameData.hp;
             this.difficulty = gameData.difficulty;
+            this.completedNormal = Boolean(gameData.completedNormal);
         }else{
             this.frameCount = 0;
             this.level = 1;
@@ -82,6 +88,9 @@ var GAME = {
         player = new Player(30, GAME.canvas.height/2 - 15, 30, 30);
         rWeapons.sort( function() { return 0.5 - Math.random() } );
         player.weapons = [rWeapons[5], rWeapons[1], rWeapons[3]];
+        alert("Weapon Loadout:\nZ: " +  player.weapons[0].name +
+        "\nX: " + player.weapons[1].name +
+        "\nC: " + player.weapons[2].name);
         GAME.load();
     },
     handleBGM: function(){
@@ -111,6 +120,7 @@ var GAME = {
     musicVolume: 1,
     DATE: new Date(),
     loadedEverything: false,
+    completedNormal: false
 }
 function colorToList(color){
     return [
@@ -154,7 +164,8 @@ var sounds = {
     shieldBreak: new Audio("./sfx/shieldbreak.ogg"),
     gong: new Audio("./sfx/gong.ogg"),
     metalBark: new Audio("./sfx/metalbark.ogg"),
-    birdScream: new Audio("./sfx/birdscream.ogg"), 
+    birdScream: new Audio("./sfx/birdscream.ogg"),
+    teleport: new Audio("./sfx/teleport.ogg"),
 }
 var musics = [
     new Audio("./music/Blank.ogg"), //Menu
@@ -354,6 +365,75 @@ function setSprites(){
                     new Sprite("reflector4", [1, 1]),
                     ],
                     25, true),
+        genex: new Animation([
+                    new Sprite("genex1", [1, 1]),
+                    new Sprite("genex2", [1, 1]),
+                    new Sprite("genex3", [1, 1]),
+                    ],
+                    16, true),
+        genex_hurt: new Animation([
+                    new Sprite("genex-pain1", [1, 1]),
+                    new Sprite("genex-pain2", [1, 1]),
+                    new Sprite("genex-pain3", [1, 1]),
+                    ],
+                    8, true),
+        gong_idle: new Animation([
+                    new Sprite("gong", [1, 1]),
+                    new Sprite("gong", [1, 1]),
+                    new Sprite("gong", [1, 1]),
+                    new Sprite("gong", [1, 1]),
+                    new Sprite("gong", [1, 1]),
+                    new Sprite("gong-blink1", [1, 1]),
+                    new Sprite("gong-blink2", [1, 1]),
+                    ],
+                    13, true),
+        gong_firing: new Animation([
+                    new Sprite("gong-red", [1, 1]),
+                    ],
+                    1, false),
+        rush_idle: new Animation([
+                    new Sprite("rush", [1, 1]),
+                    ],
+                    1, false),
+        rush_twiddle: new Animation([
+                    new Sprite("rush-twiddle1", [1, 1]),
+                    new Sprite("rush-twiddle2", [1, 1]),
+                    new Sprite("rush-twiddle3", [1, 1]),
+                    new Sprite("rush-twiddle4", [1, 1]),
+                    new Sprite("rush-twiddle5", [1, 1]),
+                    new Sprite("rush-twiddle6", [1, 1]),
+                    new Sprite("rush", [1, 1]),
+                    new Sprite("rush", [1, 1]),
+                    ],
+                    6, true),
+        rush_rush: new Animation([
+                    new Sprite("rush-rush1", [1, 1]),
+                    new Sprite("rush-rush2", [1, 1]),
+                    new Sprite("rush-rush3", [1, 1]),
+                    ],
+                    6, true),
+        soulja_idle: new Animation([
+                    new Sprite("soulja-neutral", [1, 1]),
+                    ],
+                    1, false),
+        soulja_ready: new Animation([
+                    new Sprite("soulja-neutral", [1, 1]),
+                    new Sprite("soulja-ready1", [1, 1]),
+                    new Sprite("soulja-ready2", [1, 1]),
+                    new Sprite("soulja-ready3", [1, 1]),
+                    ],
+                    7, true),
+        soulja_fire: new Animation([
+                    new Sprite("soulja-fire", [1, 1]),
+                    new Sprite("soulja-neutral", [1, 1]),
+                    ],
+                    4, true),
+        soulja_ease: new Animation([
+                    new Sprite("soulja-ready3", [1, 1]),
+                    new Sprite("soulja-ready2", [1, 1]),
+                    new Sprite("soulja-ready1", [1, 1]),
+                    ],
+                    7, true),
     };
     for(var i in spriteAnimations){
         spriteAnimations[i].init();
@@ -588,7 +668,7 @@ Bullet.prototype.interact = function(obj){
 
 function LeftistBullet(X, Y){
     Bullet.call(this, X, Y, 8, 8);
-    this.color = [100, 0, 0];
+    this.color = [255, 128, 0];
 }
 LeftistBullet.prototype = Object.create(Bullet.prototype);
 LeftistBullet.prototype.update = function(){
@@ -656,7 +736,7 @@ Firework.prototype.update = function(){
                                 [0, 0, 255]);
             b.setUser(this.user);
             if(!(this.user instanceof Player)){
-                b.color = [100, 0, 0];
+                b.color = [255, 0, 0];
             }
             b.setVelocity(12 * Math.cos(i), 12 * Math.sin(i));
             entities.push(b);
@@ -689,7 +769,7 @@ Shield.prototype = Object.create(Bullet.prototype);
 Shield.prototype.draw = function(obj){
     var CTX = GAME.context;
     this.centerPosition();
-    CTX.globalAlpha = 0.5;
+    CTX.globalAlpha = 0.4;
     CTX.fillStyle = listToColor(this.color);
     CTX.fillRect(-this.width/2, -this.height/2, this.width, this.height);
     CTX.globalAlpha = 1;
@@ -803,7 +883,7 @@ WindScreen.prototype.interact = function(obj){
 
 function StabRod(X, Y){
     Shield.call(this, X, Y);
-    this.width = 50;
+    this.width = 80;
     this.height = 10;
     this.delayTimer = 10;
     this.color = [255, 0, 0];
@@ -1162,11 +1242,11 @@ Mirage.prototype.interact = function(obj){
 function DemonShape(X, Y, variant=1){
     Enemy.call(this, X, Y, 65, 65);
     this.hp = 25;
+    this.color = [75, 50, 75];
+    this.variant = variant;
     if(this.variant > 1){
         this.hp = 35;
     }
-    this.color = [75, 50, 75];
-    this.variant = variant;
     this.delayTimer = 0;
     this.animation = spriteAnimations.demonicShape_idle;
 }
@@ -1570,12 +1650,13 @@ Canid.prototype.whenHit = function(){
 }
 
 function Charger(X, Y, variant=1){
-    Enemy.call(this, X, Y, 36, 36);
+    Enemy.call(this, X, Y, 35, 35);
     this.variant = variant;
     this.delayTimer = 75;
     this.hp = 11;
     this.color = [0, 0, 255];
     this.retreating = true;
+    this.animation = Object.create(spriteAnimations.rush_idle);
 }
 Charger.prototype = Object.create(Enemy.prototype);
 Charger.prototype.update = function(){
@@ -1583,6 +1664,9 @@ Charger.prototype.update = function(){
     if(this.position.x < 0){
         this.position.x = 0;
         this.velocity.x *= -1;
+    }
+    if(this.delayTimer == 100){
+        this.animation = Object.create(spriteAnimations.rush_twiddle);
     }
     this.delayTimer++;
     Enemy.prototype.update.call(this);
@@ -1598,6 +1682,7 @@ Charger.prototype.interact = function(obj){
             (this.position.x < 100 && this.velocity.x < 0)){
                 this.retreating = true;
                 this.delayTimer = 0;
+                //this.animation = Object.create(spriteAnimations.rush_idle);
             }
         }else{
             var dx = GAME.canvas.width * 0.9 - this.position.x;
@@ -1617,6 +1702,7 @@ Charger.prototype.interact = function(obj){
                 sounds.shieldStart.play();
                 sounds.rush.currentTime = 0;
                 sounds.rush.play();
+                this.animation = Object.create(spriteAnimations.rush_rush);
             }
         }
     }
@@ -1630,6 +1716,7 @@ function Gong(X, Y, variant=1){
     this.hp = 12;
     this.color = [255, 200, 0];
     this.sizeVel = 0;
+    this.animation = Object.create(spriteAnimations.gong_idle);
 }
 Gong.prototype = Object.create(Enemy.prototype);
 Gong.prototype.update = function(){
@@ -1652,6 +1739,9 @@ Gong.prototype.update = function(){
     this.width += this.sizeVel;
     this.height += this.sizeVel;
     this.sizeVel *= GAME.friction;
+    if(this.delayTimer < 5){
+        this.animation = Object.create(spriteAnimations.gong_firing);
+    }
     if(this.delayTimer > 0){
         this.delayTimer--;
     }else{
@@ -1667,6 +1757,7 @@ Gong.prototype.update = function(){
         sounds.mehPew.currentTime = 0;
         sounds.mehPew.play();
         this.delayTimer = 225;
+        this.animation = Object.create(spriteAnimations.gong_idle);
     }
     Enemy.prototype.update.call(this);
 }
@@ -1676,7 +1767,7 @@ Gong.prototype.whenHit = function(){
         var b = new Bullet(
             this.position.x + this.width/2 - 7.5 + 41 * Math.cos(i),
             this.position.y + this.height/2 - 7.5 - 41 * Math.sin(i),
-            15, 15, [100, 0, 0]);
+            15, 15, [150, 100, 100]);
         b.setUser(this);
         b.setVelocity(-1.845 + 13 * Math.cos(i), 13 * -Math.sin(i));
         entities.push(b);
@@ -1694,6 +1785,7 @@ function Genex(X, Y, variant=1){
     this.delayTimer = 0;
     this.aimPos = {DX: 0, DY: 0, MAG: 1};
     this.initialShield = true;
+    this.animation = Object.create(spriteAnimations.genex);
 }
 Genex.prototype = Object.create(Enemy.prototype);
 Genex.prototype.update = function(){
@@ -1752,16 +1844,18 @@ Genex.prototype.whenHit = function(){
         this.color = [128, 255, 128];
         this.velocity.x *= -1.5;
         this.velocity.y *= -1.5;
+        this.animation = Object.create(spriteAnimations.genex_hurt);
     }
 }
 function Soulja(X, Y, variant=1){
     Enemy.call(this, X, Y, 35, 35);
     this.color = [0, 128, 0];
-    this.hp = 6;
+    this.hp = 3;
     this.velocity = {x: 0, y: 0};
     this.variant = variant;
     this.aimPos = {DX: 0, DY: 0, MAG: 1};
     this.delayTimer = 0;
+    this.animation = Object.create(spriteAnimations.soulja_idle);
 }
 Soulja.prototype = Object.create(Enemy.prototype);
 Soulja.prototype.update = function(){
@@ -1770,13 +1864,19 @@ Soulja.prototype.update = function(){
     if(this.position.x > GAME.canvas.width * 0.95){
         this.applyForce(-3, 0);
     }
+    if(this.delayTimer % 75 == (74 - 14 - 5)){
+        this.animation = Object.create(spriteAnimations.soulja_ready);
+    }
+    if(this.delayTimer % 75 == (74 - 5)){
+        this.animation = Object.create(spriteAnimations.soulja_fire);
+    }
     Enemy.prototype.update.call(this);
 }
 Soulja.prototype.interact = function(obj){
     this.rawForce = {x: 0, y: 0};
     if(obj instanceof Player){
         if(this.delayTimer % 25 == 0){
-            this.aimPos.DX = obj.position.x - this.position.x + 150;
+            this.aimPos.DX = obj.position.x - this.position.x;
             this.aimPos.DY = obj.position.y - this.position.y;
             this.aimPos.MAG = Math.sqrt(this.aimPos.DX ** 2 +
                                 this.aimPos.DY ** 2);
@@ -1784,6 +1884,7 @@ Soulja.prototype.interact = function(obj){
         this.rawForce.x += 0.2 * this.aimPos.DX/this.aimPos.MAG;
         this.rawForce.y += 0.2 * this.aimPos.DY/this.aimPos.MAG;
         if(this.delayTimer % 75 == 0){
+            this.animation = Object.create(spriteAnimations.soulja_idle);
             var b = new ShieldBreaker(this.position.x + this.width/2,
                                 this.position.y + this.height/2, 10, 10,
                                 [255, 0, 0]);
@@ -2192,21 +2293,22 @@ function PatientZero(X, Y, variant=1){
     this.seed = Math.random();
     this.nextPhase = 1;
     this.animation = Object.create(spriteAnimations.zero);
+    this.shieldActive = false; //means the player's shield
 }
 PatientZero.prototype = Object.create(Enemy.prototype);
 PatientZero.prototype.update = function(){
     this.applyFriction();
-    var shieldActive = false;
+    this.shieldActive = false;
     for(var i in entities){
         if(entities[i] instanceof Shield && entities[i].user instanceof Player){
-            shieldActive = true;
+            this.shieldActive = true;
             break;
         }
     }
     if(this.position.x > GAME.canvas.width - 50){
         this.applyForce(-2, 0);
     }
-    if(shieldActive && this.windTimer == 0 && this.phase > 2){
+    if(this.shieldActive && this.windTimer == 0 && this.phase > 2){
         var w = new WindScreen([-1, 0]);
         w.setUser(this);
         entities.push(w);
@@ -2252,7 +2354,7 @@ PatientZero.prototype.update = function(){
             for(var i = 0; i < 3; i++){
                 var b = new Bullet(this.position.x + this.width/2,
                                     this.position.y + this.height/2, 10, 10);
-                if(this.variant > 1){
+                if(this.variant > 1 && this.delayTimer % 12 == 0){
                     b = new ShieldBreaker(this.position.x + this.width/2,
                                     this.position.y + this.height/2);
                 }
@@ -2302,6 +2404,7 @@ PatientZero.prototype.update = function(){
     this.delayTimer--;
     Enemy.prototype.update.call(this);
     if(this.dead){
+        GAME.completedNormal = true;
         if(GAME.difficulty == 0){
             alert("Good job! You beat the game.");
             alert("Now it's time for a REAL challenge...");
@@ -2346,7 +2449,7 @@ PatientZero.prototype.interact = function(obj){
             var b = new Bullet(this.position.x + this.width/2,
                                 this.position.y + this.height/2, 10, 10,
                                 [255, 0, 0]);
-            if(this.variant > 1 && this.delayTimer % 20 == 0){
+            if(this.variant > 1 && this.delayTimer % 10 == 0){
                 b = new ShieldBreaker(this.position.x + this.width/2,
                                 this.position.y + this.height/2);
             }
@@ -2360,7 +2463,11 @@ PatientZero.prototype.interact = function(obj){
     }
     if(this.phase == 3){
         if(this.delayTimer % 10 == 0 && obj instanceof Player){
-            this.position.y = Math.random() * 550;
+            if(this.windTimer > 0){
+                this.position.y = obj.position.y;
+            }else{
+                this.position.y = Math.random() * 550;
+            }
         }
     }
     Enemy.prototype.interact.call(this, obj);
@@ -2594,6 +2701,10 @@ function drawForeground(){
             musics[i].pause();
         }
         GAME.restart();
+        if(GAME.difficulty > 0){
+            entities = [];
+            GAME.level = 0;
+        }
     }
     if(GAME.frameCount < GAME.levelLengths[GAME.level - 1]){
         CTX.fillStyle = "#FEFE99";
@@ -2650,12 +2761,20 @@ function BackgroundTile(imageSrc, X, XVel=-2){
 function spawnBackground(){
     if(backgroundTimer == 0 && GAME.level > 0 &&
         Number.isInteger(GAME.level)){
-        var b = new BackgroundTile(BGs[GAME.level], GAME.canvas.width);
+        if(GAME.difficulty == 2 && GAME.level == 4){
+            var b = new BackgroundTile("secretBG", GAME.canvas.width);
+        }else{
+            var b = new BackgroundTile(BGs[GAME.level], GAME.canvas.width);
+        }
         b.initImage();
         backgroundTiles.push(b);
         backgroundTimer = 600;
         if(!spawnedStart){
-            var b = new BackgroundTile(BGs[GAME.level], GAME.canvas.width);
+            if(GAME.difficulty == 2 && GAME.level == 4){
+                var b = new BackgroundTile("secretBG", GAME.canvas.width);
+            }else{
+                var b = new BackgroundTile(BGs[GAME.level], GAME.canvas.width);
+            }
             b.initImage();
             b.position.x = 0;
             backgroundTiles.push(b);
@@ -2818,6 +2937,20 @@ W_StabRod.prototype.pewpew = function(){
     entities.push(s);
 }
 
+function W_Teleport(){
+    PWeapon.call(this, "Teleport", 15);
+}
+W_Teleport.prototype = Object.create(PWeapon.prototype);
+W_Teleport.prototype.pewpew = function(){
+    player.invinciTimer = 7;
+    player.velocity.x = 0;
+    player.position.x += 150;
+    player.position.x = Math.min(player.position.x,
+            GAME.canvas.width - player.width - 5);
+    sounds.teleport.currentTime = 0;
+    sounds.teleport.play();
+}
+
 var entities = [];
 var player = new Player(0, 0, 30, 30);
 var initTime = 0;
@@ -2830,7 +2963,8 @@ var weapons = [
     new W_Wind(),
     new W_ForceShooter(),
     new W_TripleShot(),
-    new W_StabRod()
+    new W_StabRod(),
+    new W_Teleport()
 ];
 var rWeapons = weapons.slice();
 rWeapons.sort( function() { return 0.5 - Math.random() } );
@@ -2950,6 +3084,7 @@ document.onkeyup = function(e){
 var menuEntities = [
     new Button(600 - 175, 400, 150, 25, "Start"),
     new Button(600 + 25, 400, 150, 25, "Instructions"),
+    new Button(600 - 75, 500, 150, 25, "Reroll Weapons"),
     new Text(600, 150,
                                 "XINDEXIN", 80, [0, 0, 0], Infinity),
     new Text(600, 240,
@@ -2974,6 +3109,33 @@ menuEntities[1].doStuff = function(){
                                 "M to Mute/Unmute music.", 30, [0, 0, 0], 150));
     player.position.x = 0;
     player.position.y = 0;
+    sounds.enter.currentTime = 0;
+    sounds.enter.play();
+}
+menuEntities[2].doStuff = function(){
+    if(GAME.completedNormal){
+        rWeapons.sort( function() { return 0.5 - Math.random() } );
+        player.weapons = [rWeapons[5], rWeapons[1], rWeapons[3]];
+        //clear the text
+        for(var i = 0; i < entities.length; i++){
+            if(entities[i] instanceof Text && entities[i].delayTimer > 0){
+                entities[i].delayTimer -= 100;
+            }
+        }
+        entities.push(new Text(GAME.canvas.width/2, GAME.canvas.height/2 - 30,
+                        "Z: " +  player.weapons[0].name, 30, [255, 0, 0], 150));
+        entities.push(new Text(GAME.canvas.width/2, GAME.canvas.height/2,
+                        "X: " +  player.weapons[1].name, 30, [255, 0, 0], 150));
+        entities.push(new Text(GAME.canvas.width/2, GAME.canvas.height/2 + 30,
+                        "C: " +  player.weapons[2].name, 30, [255, 0, 0], 150));
+    }else{
+        entities.push(new Text(GAME.canvas.width/2, GAME.canvas.height/2 - 30,
+                                "Complete Normal mode to unlock.", 30, [0, 0, 0], 150));
+        
+    }
+    player.position.x = this.position.x + this.width/2 - player.width/2;
+    player.position.y = this.position.y - player.height - 10;
+    player.velocity.y = 0;
     sounds.enter.currentTime = 0;
     sounds.enter.play();
 }
@@ -4072,34 +4234,87 @@ function spawnEntities(){
             }
             if(GAME.frameCount == 0){
                 entities.push(new Text(GAME.canvas.width/2, GAME.canvas.height/2,
-                                "Stage 4 EX - Secret Lab", 50, [0, 0, 0], 150));
+                                "Final Stage EX - The Secret Lab", 50, [0, 0, 0], 150));
                 entities.push(new Text(GAME.canvas.width/2, GAME.canvas.height/2 + 50,
                                 "BGM: ♪ [something] ♪", 20, [100, 100, 100], 150));
             }
-            if(GAME.frameCount < 750){
+            if(GAME.frameCount < 500){
                 if(GAME.frameCount % 350 == 0){
-                    entities.push(new Soulja(1199, Math.random() * 550));
+                    entities.push(new Charger(1199, Math.random() * 550));
                 }
-            }else if(GAME.frameCount < 1500){
-                if(GAME.frameCount % 75 == 0){
+            }else if(GAME.frameCount < 1000){
+                if(GAME.frameCount % 50 == 0){
                     entities.push(new Genex(1199, Math.random() * 550));
                 }
-            }else if(GAME.frameCount < 3500){
-                if(GAME.frameCount % 350 == 0){
-                    entities.push(new Gong(1199, Math.random() * 550));
+            }else if(GAME.frameCount < 1500){
+                if(GAME.frameCount % 1000 == 0){
+                    entities.push(new Charger(1199, Math.random() * 550));
                 }
-                if(GAME.frameCount % 11 == 0 && GAME.frameCount > 3000){
-                    entities.push(new Bat(1199, Math.random() * 550, 2));
-                }
-                if(GAME.frameCount % 11 == 6 && GAME.frameCount > 3000){
+                if(GAME.frameCount % 6 == 0){
                     entities.push(new Bat(1199, Math.random() * 550, 1));
                 }
-            }else if(GAME.frameCount < 4500){
+            }else if(GAME.frameCount < 2500){
                 if(GAME.frameCount % 100 == 0){
                     entities.push(new Genex(1199, Math.random() * 550, 3));
                 }
-                if(GAME.frameCount % 350 == 200){
+                if(GAME.frameCount % 425 == 200){
                     entities.push(new Gong(1199, Math.random() * 550));
+                }
+            }else if(GAME.frameCount < 3000){
+                if(GAME.frameCount % 350 == 0){
+                    entities.push(new Soulja(1199, Math.random() * 550));
+                }
+            }else if(GAME.frameCount < 3300){
+                if(GAME.frameCount % 3000 == 0){
+                    entities.push(new Blower(1199, Math.random() * 550, 3));
+                }
+                if(GAME.frameCount % 3000 == 150){
+                    entities.push(new Soulja(1199, Math.random() * 550));
+                }
+            }else if(GAME.frameCount < 4000){
+                if(GAME.frameCount % 75 == 0){
+                    entities.push(new Genex(1199, Math.random() * 550));
+                }
+                if(GAME.frameCount % 400 == 150){
+                    entities.push(new Soulja(1199, Math.random() * 550));
+                }
+            }else if(GAME.frameCount < 4500){
+                if(GAME.frameCount % 400 == 150){
+                    entities.push(new Soulja(1199, Math.random() * 550));
+                }
+                if(GAME.frameCount % 500 == 200){
+                    entities.push(new Gong(1199, Math.random() * 550));
+                }
+            }else if(GAME.frameCount < 5000){
+                if(GAME.frameCount % 500 == 0){
+                    entities.push(new Raven(1199, Math.random() * 550, 3));
+                }
+            }else if(GAME.frameCount < 5500){
+                if(GAME.frameCount % 500 == 0){
+                    entities.push(new Raven(1199, Math.random() * 550, 3));
+                }
+                if(GAME.frameCount % 500 == 50){
+                    entities.push(new Canid(1199, Math.random() * 550, 3));
+                }
+                if(GAME.frameCount % 500 == 250){
+                    entities.push(new Soulja(1199, Math.random() * 550));
+                }
+            }else if(GAME.frameCount < 6500){
+                if(GAME.frameCount % 1000 == 250){
+                    entities.push(new Mirage(1199, Math.random() * 550, 3));
+                }
+                if(GAME.frameCount % 300 == 0){
+                    entities.push(new Gong(1199, Math.random() * 550));
+                }
+            }else if(GAME.frameCount < 7750){
+                if(GAME.frameCount % 100 == 0 && GAME.frameCount < 7000){
+                    entities.push(new CrossShot(1199, Math.random() * 550, 3));
+                }
+                if(GAME.frameCount % 50 == 0 && GAME.frameCount >= 7250){
+                    entities.push(new Lost(1199, Math.random() * 550, 3));
+                }
+                if(GAME.frameCount % 100 == 20){
+                    entities.push(new Genex(1199, Math.random() * 550, 3));
                 }
             }
         }
@@ -4260,5 +4475,31 @@ function main(){
         <img id="cityBG" class="img" src="./images/CityBG.png" alt="It didn't work.">
         <img id="mountainBG" class="img" src="./images/MountainBG.png" alt="It didn't work.">
         <img id="labBG" class="img" src="./images/LabBG.png" alt="It didn't work.">
+        <img id="secretBG" class="img" src="./images/SecretLabBG.png" alt="It didn't work.">
+        <img id="genex1" class="img" src="./images/Genex1.png" alt="It didn't work.">
+        <img id="genex2" class="img" src="./images/Genex2.png" alt="It didn't work.">
+        <img id="genex3" class="img" src="./images/Genex3.png" alt="It didn't work.">
+        <img id="genex-pain1" class="img" src="./images/Genex-Pain1.png" alt="It didn't work.">
+        <img id="genex-pain2" class="img" src="./images/Genex-Pain2.png" alt="It didn't work.">
+        <img id="genex-pain3" class="img" src="./images/Genex-Pain3.png" alt="It didn't work.">
+        <img id="gong" class="img" src="./images/Gong.png" alt="It didn't work.">
+        <img id="gong-blink1" class="img" src="./images/Gong-Blink2.png" alt="It didn't work.">
+        <img id="gong-blink2" class="img" src="./images/Gong-Blink3.png" alt="It didn't work.">
+        <img id="gong-red" class="img" src="./images/Gong-Red.png" alt="It didn't work.">
+        <img id="rush" class="img" src="./images/Rush.png" alt="It didn't work.">
+        <img id="rush-twiddle1" class="img" src="./images/Rush-Twiddle1.png" alt="It didn't work.">
+        <img id="rush-twiddle2" class="img" src="./images/Rush-Twiddle2.png" alt="It didn't work.">
+        <img id="rush-twiddle3" class="img" src="./images/Rush-Twiddle3.png" alt="It didn't work.">
+        <img id="rush-twiddle4" class="img" src="./images/Rush-Twiddle4.png" alt="It didn't work.">
+        <img id="rush-twiddle5" class="img" src="./images/Rush-Twiddle5.png" alt="It didn't work.">
+        <img id="rush-twiddle6" class="img" src="./images/Rush-Twiddle6.png" alt="It didn't work.">
+        <img id="rush-rush1" class="img" src="./images/Rush-Rush1.png" alt="It didn't work.">
+        <img id="rush-rush2" class="img" src="./images/Rush-Rush2.png" alt="It didn't work.">
+        <img id="rush-rush3" class="img" src="./images/Rush-Rush3.png" alt="It didn't work.">
+        <img id="soulja-neutral" class="img" src="./images/Soulja.png" alt="It didn't work.">
+        <img id="soulja-ready1" class="img" src="./images/Soulja-Ready1.png" alt="It didn't work.">
+        <img id="soulja-ready2" class="img" src="./images/Soulja-Ready2.png" alt="It didn't work.">
+        <img id="soulja-ready3" class="img" src="./images/Soulja-Ready3.png" alt="It didn't work.">
+        <img id="soulja-fire" class="img" src="./images/Soulja-Fire.png" alt="It didn't work.">
     </body>
 </html>
