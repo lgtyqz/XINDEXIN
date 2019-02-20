@@ -27,7 +27,7 @@ var GAME = {
         this.context = this.canvas.getContext("2d");
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         //this.load();
-        if(localStorage.Shooter != ""){
+        if(localStorage.Shooter != "" && localStorage.Shooter !== undefined){
             var gameData = JSON.parse(localStorage.Shooter);
             this.completedNormal = Boolean(gameData.completedNormal);
         }
