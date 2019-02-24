@@ -2956,6 +2956,7 @@ W_Teleport.prototype.pewpew = function(){
         player.invinciTimer = 7;
     }
     player.velocity.x = 0;
+    player.velocity.y = 0;
     player.position.x += 150;
     player.position.x = Math.min(player.position.x,
             GAME.canvas.width - player.width - 5);
