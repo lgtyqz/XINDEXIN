@@ -689,6 +689,16 @@ ShieldBreaker.prototype.interact = function(obj){
         obj.user.invinciTimer = Math.max(0, obj.user.invinciTimer);
         sounds.shieldBreak.currentTime = 0;
         sounds.shieldBreak.play();
+        var particles = [];
+        for(var i = 0; i < 12; i++){
+            particles.push(new Particle(
+                obj.position.x + obj.width/2,
+                obj.position.y + obj.height/2,
+                15, 15, [0, 100, 255], 20));
+            particles[i].setVelocity(Math.random() * 25 - 12.5,
+                                    Math.random() * 25 - 12.5);
+            entities.push(particles[i]);
+        }
     }
     Bullet.prototype.interact.call(this, obj);
 }
@@ -2942,7 +2952,9 @@ function W_Teleport(){
 }
 W_Teleport.prototype = Object.create(PWeapon.prototype);
 W_Teleport.prototype.pewpew = function(){
-    player.invinciTimer = 7;
+    if(player.invinciTimer < 9){
+        player.invinciTimer = 7;
+    }
     player.velocity.x = 0;
     player.position.x += 150;
     player.position.x = Math.min(player.position.x,
@@ -4307,7 +4319,7 @@ function spawnEntities(){
                     entities.push(new Gong(1199, Math.random() * 550));
                 }
             }else if(GAME.frameCount < 7750){
-                if(GAME.frameCount % 100 == 0 && GAME.frameCount < 7000){
+                if(GAME.frameCount % 100 == 0 && GAME.frameCount < 6700){
                     entities.push(new CrossShot(1199, Math.random() * 550, 3));
                 }
                 if(GAME.frameCount % 50 == 0 && GAME.frameCount >= 7250){
@@ -4315,6 +4327,37 @@ function spawnEntities(){
                 }
                 if(GAME.frameCount % 100 == 20){
                     entities.push(new Genex(1199, Math.random() * 550, 3));
+                }
+            }else if(GAME.frameCount < 9000){
+                if(GAME.frameCount % 50 == 0){
+                    entities.push(new Bat(1199, Math.random() * 550, 2));
+                }
+                if(GAME.frameCount % 500 == 250){
+                    entities.push(new Soulja(1199, Math.random() * 550));
+                }
+                if(GAME.frameCount % 750 == 350){
+                    entities.push(new Charger(1199, Math.random() * 550));
+                }
+            }else if(GAME.frameCount < 10000){
+                if(GAME.frameCount % 340 == 0){
+                    entities.push(new DemonShape(1199, Math.random() * 550, 3));
+                }
+                if(GAME.frameCount % 750 == 350){
+                    entities.push(new Charger(1199, Math.random() * 550));
+                }
+            }else if(GAME.frameCount < 11000){
+                if(GAME.frameCount % 330 == 0){
+                    entities.push(new Canid(1199, Math.random() * 550, 3));
+                }
+                if(GAME.frameCount == 10000){
+                    entities.push(new Blower(1199, 150, 3));
+                }
+                if(GAME.frameCount == 10500){
+                    entities.push(new Blower(1199, 350, 3));
+                }
+            }else if(GAME.frameCount > 11750 && GAME.frameCount < 12000){
+                if(GAME.frameCount % 50 == 0){
+                    entities.push(new Soulja(1199, Math.random() * 550));
                 }
             }
         }
