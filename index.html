@@ -676,8 +676,8 @@ LeftistBullet.prototype.update = function(){
     Bullet.prototype.update.call(this);
 }
 
-function ShieldBreaker(X, Y){
-    Bullet.call(this, X, Y, 10, 10);
+function ShieldBreaker(X, Y, W, H){
+    Bullet.call(this, X, Y, W, H);
     this.color = [255, 100, 255];
 }
 ShieldBreaker.prototype = Object.create(Bullet.prototype);
@@ -2486,6 +2486,159 @@ PatientZero.prototype.whenHit = function(){
     this.color = [255 * Math.random(),
                     255 * Math.random(),
                     255 * Math.random()];
+}
+
+function Eye(X, Y, anchor){
+    Enemy.call(this, X, Y, 70, 70);
+    this.color = [255, 255, 255];
+    this.hp = 75;
+    this.delayTimer = 50;
+    this.anchor = anchor;
+    //Shoots the beams
+    //0: IDLE
+    //1: Bullet Blasts
+    //2: Lines
+    //3: Death Beam
+    this.phase = 0;
+    this.randomize = true;
+    this.isBoss = false; //nope, just an accomplice
+    this.aimPos = {DX: 0, DY: -1, MAG: 1};
+    this.seed = Math.random();
+    this.nextPhase = 1;
+}
+Eye.prototype = Object.create(Enemy.prototype);
+Eye.prototype.update = function(){
+    this.applyFriction();
+    if(this.position.x > this.anchor){
+        this.applyForce(-2, 0);
+    }
+    if(this.delayTimer <= 0){
+        if(this.phase == 0){
+            this.phase = Math.floor(Math.random() * 3) + 1;
+            this.delayTimer = 100;
+        }else{
+            this.phase = 0;
+            this.delayTimer = 200;
+        }
+    }
+    if(this.position.y > GAME.canvas.height/2 - this.height){
+        this.applyForce(0, -0.3);
+    }
+    this.delayTimer--;
+    Enemy.prototype.update.call(this);
+}
+Eye.prototype.interact = function(obj){
+    if(this.phase == 1 && this.delayTimer % 25 < 5 && this.delayTimer % 2 == 0){
+        for(var i = 3 * Math.PI/4; i < 5 * Math.PI/4; i += Math.PI/10){
+            var b = new Bullet(this.position.x + this.width/2,
+                                this.position.y + this.height/2, 10, 10,
+                                [255, 0, 0]);
+            b.setUser(this);
+            b.setVelocity(8 * Math.cos(i), 8 * -Math.sin(i));
+            entities.push(b);
+        }
+    }
+    if(this.phase == 2 && obj instanceof Player){
+        if(this.delayTimer % 30 >= 28){
+            this.aimPos.DX = obj.position.x - this.position.x;
+            this.aimPos.DY = obj.position.y - this.position.y;
+            this.aimPos.MAG = Math.sqrt(this.aimPos.DX ** 2 + this.aimPos.DY ** 2);
+        }else if(this.delayTimer % 4 == 0){
+            var b = new ShieldBreaker(this.position.x + this.width/2,
+                                this.position.y + this.height/2, 10, 10);
+            b.setUser(this);
+            b.setVelocity(12 * this.aimPos.DX/this.aimPos.MAG,
+                        12 * this.aimPos.DY/this.aimPos.MAG);
+            entities.push(b);
+            sounds.beam.currentTime = 0;
+            sounds.beam.play();
+        }
+    }
+    if(this.phase == 3){
+        if(this.delayTimer % 3 == 0 && this.delayTimer < 50){
+            var b = new ShieldBreaker(this.position.x + this.width/2 - 40,
+                                this.position.y + this.height/2 - 20, 125, 40);
+            b.setUser(this);
+            b.setVelocity(-30, 0);
+            entities.push(b);
+        }else if(obj instanceof Player){
+            if(this.position.y > obj.position.y){
+                this.applyForce(0, -0.4);
+            }else{
+                this.applyForce(0, 0.4);
+            }
+        }
+    }
+    Enemy.prototype.interact.call(this, obj);
+}
+
+function Hand(X, Y, anchor){
+    Enemy.call(this, X, Y, 40, 80);
+    this.color = [255, 255, 0];
+    this.hp = 50;
+    this.delayTimer = 200;
+    this.anchor = anchor;
+    //Shoots the beams
+    //0: IDLE
+    //1: Summon mutants
+    //2: Super Slam
+    //3: Death Beam
+    this.phase = 0;
+    this.randomize = true;
+    this.isBoss = false; //nope, just an accomplice
+    this.aimPos = {DX: 0, DY: -1, MAG: 1};
+    this.seed = Math.random();
+    this.nextPhase = 1;
+    this.retreating = true;
+}
+Hand.prototype = Object.create(Enemy.prototype);
+Hand.prototype.update = function(){
+    this.applyFriction();
+    if(this.position.x > this.anchor){
+        this.applyForce(-2, 0);
+    }
+    if(this.delayTimer <= 0){
+        this.retreating = false;
+        if(this.phase == 0){
+            this.phase = Math.floor(Math.random() * 2) + 1;
+            this.delayTimer = 100;
+        }else{
+            this.phase = 0;
+            this.delayTimer = 200;
+        }
+    }
+    this.delayTimer--;
+    Enemy.prototype.update.call(this);
+}
+Hand.prototype.interact = function(obj){
+    if(obj instanceof Player && this.phase == 0){
+        if(this.position.y > obj.position.y){
+            this.applyForce(0, -0.5);
+        }else{
+            this.applyForce(0, 0.5);
+        }
+    }
+    if(this.phase == 1 && this.delayTimer % 50 == 0){
+        entities.push(new Genex(1199, Math.random() * 550));
+    }
+    if(this.phase == 2 && obj instanceof Player){
+        if(!this.retreating){
+            var dx = obj.position.x - this.position.x;
+            var dy = obj.position.y - this.position.y;
+            var mag = Math.sqrt(dx ** 2 + dy ** 2);
+            this.applyForce(2 * dx/mag, 0);
+            if(this.position.x < player.position.x || this.delayTimer > 250){
+                this.retreating = true;
+            }
+        }else{
+            var dx = this.anchor - this.position.x;
+            var dy = obj.position.y - this.position.y;
+            var mag = Math.sqrt(dx ** 2 + dy ** 2);
+            this.applyForce(2 * dx/mag, 1.5 * Math.cos(this.delayTimer/50 * 2 * Math.PI));
+            this.applyForce(0, 0.5 * dy/mag);
+        }
+    }
+    Enemy.prototype.interact.call(this, obj);
 }
 
 function UtilityObj(X, Y, W, H){
@@ -4323,13 +4476,13 @@ function spawnEntities(){
                 if(GAME.frameCount % 100 == 0 && GAME.frameCount < 6700){
                     entities.push(new CrossShot(1199, Math.random() * 550, 3));
                 }
-                if(GAME.frameCount % 50 == 0 && GAME.frameCount >= 7250){
+                if(GAME.frameCount % 50 == 0 && GAME.frameCount >= 7350){
                     entities.push(new Lost(1199, Math.random() * 550, 3));
                 }
                 if(GAME.frameCount % 100 == 20){
                     entities.push(new Genex(1199, Math.random() * 550, 3));
                 }
-            }else if(GAME.frameCount < 9000){
+            }else if(GAME.frameCount < 9000 && GAME.frameCount > 8000){
                 if(GAME.frameCount % 50 == 0){
                     entities.push(new Bat(1199, Math.random() * 550, 2));
                 }
@@ -4339,7 +4492,7 @@ function spawnEntities(){
                 if(GAME.frameCount % 750 == 350){
                     entities.push(new Charger(1199, Math.random() * 550));
                 }
-            }else if(GAME.frameCount < 10000){
+            }else if(GAME.frameCount < 10000 && GAME.frameCount >= 9000){
                 if(GAME.frameCount % 340 == 0){
                     entities.push(new DemonShape(1199, Math.random() * 550, 3));
                 }
@@ -4347,7 +4500,7 @@ function spawnEntities(){
                     entities.push(new Charger(1199, Math.random() * 550));
                 }
             }else if(GAME.frameCount < 11000){
-                if(GAME.frameCount % 330 == 0){
+                if(GAME.frameCount % 660 == 0){
                     entities.push(new Canid(1199, Math.random() * 550, 3));
                 }
                 if(GAME.frameCount == 10000){
@@ -4360,6 +4513,12 @@ function spawnEntities(){
                 if(GAME.frameCount % 50 == 0){
                     entities.push(new Soulja(1199, Math.random() * 550));
                 }
+            }
+            if(GAME.frameCount == 12000){
+                entities.push(new Eye(1199, 200 - 60, GAME.canvas.width * 0.75));
+                entities.push(new Eye(1199, 200 - 60, GAME.canvas.width * 0.9));
+                entities.push(new Hand(1199, 200 - 60, GAME.canvas.width * 0.7));
+                entities.push(new Hand(1199, 200 - 60, GAME.canvas.width * 0.95));
             }
         }
     }
