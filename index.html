@@ -2528,7 +2528,7 @@ Eye.prototype.update = function(){
     Enemy.prototype.update.call(this);
 }
 Eye.prototype.interact = function(obj){
-    if(this.phase == 1 && this.delayTimer % 25 < 5 && this.delayTimer % 2 == 0){
+    if(this.phase == 1 && this.delayTimer % 50 < 5 && this.delayTimer % 2 == 0){
         for(var i = 3 * Math.PI/4; i < 5 * Math.PI/4; i += Math.PI/10){
             var b = new Bullet(this.position.x + this.width/2,
                                 this.position.y + this.height/2, 10, 10,
@@ -2573,7 +2573,7 @@ Eye.prototype.interact = function(obj){
 }
 
 function Hand(X, Y, anchor){
-    Enemy.call(this, X, Y, 40, 80);
+    Enemy.call(this, X, Y, 40, 60);
     this.color = [255, 255, 0];
     this.hp = 50;
     this.delayTimer = 200;
@@ -2582,7 +2582,6 @@ function Hand(X, Y, anchor){
     //0: IDLE
     //1: Summon mutants
     //2: Super Slam
-    //3: Death Beam
     this.phase = 0;
     this.randomize = true;
     this.isBoss = false; //nope, just an accomplice
@@ -2611,7 +2610,7 @@ Hand.prototype.update = function(){
     Enemy.prototype.update.call(this);
 }
 Hand.prototype.interact = function(obj){
-    if(obj instanceof Player && this.phase == 0){
+    if(obj instanceof Player && this.phase == 0 && this.delayTimer > 50){
         if(this.position.y > obj.position.y){
             this.applyForce(0, -0.5);
         }else{
@@ -2640,6 +2639,118 @@ Hand.prototype.interact = function(obj){
     }
     Enemy.prototype.interact.call(this, obj);
 }
+
+function Mouth(X, Y, anchor){
+    Enemy.call(this, X, Y, 70, 70);
+    this.color = [255, 0, 0];
+    this.hp = 200;
+    this.delayTimer = 200;
+    this.anchor = anchor;
+    //Shoots the beams
+    //0: IDLE
+    //1: Summon mutants
+    //2: Super Slam
+    this.phase = 0;
+    this.randomize = true;
+    this.isBoss = true; //finally
+    this.aimPos = {DX: 0, DY: -1, MAG: 1};
+    this.seed = Math.random();
+    this.nextPhase = 1;
+    this.retreating = true;
+}
+Mouth.prototype = Object.create(Enemy.prototype);
+Mouth.prototype.update = function(){
+    this.applyFriction();
+    if(this.position.x > this.anchor){
+        this.applyForce(-2, 0);
+    }
+    if(this.phase < 3){
+        this.applyForce(0, (200 - this.hp)/50 * Math.cos(this.delayTimer/50 * 2 * Math.PI));
+    }
+    if(this.delayTimer <= 0){
+        if(this.phase == 0){
+            if(this.hp > 125){
+                this.phase = 1;
+                this.delayTimer = 300;
+            }else if(this.hp > 75){
+                this.phase = 2;
+                this.delayTimer = 100;
+            }else if(this.hp > 25){
+                this.phase = 3;
+                this.delayTimer = 250;
+            }else{
+                this.phase = 4;
+                this.delayTimer = 20;
+            }
+        }else{
+            this.phase = 0;
+            if(this.hp > 75){
+                this.delayTimer = 200;
+            }else if(this.hp > 25){
+                this.delayTimer = 125;
+            }else{
+                this.delayTimer = 0;
+            }
+        }
+    }
+    this.delayTimer--;
+    Enemy.prototype.update.call(this);
+}
+Mouth.prototype.interact = function(obj){
+    if(obj instanceof Player){
+        if(this.phase == 0){
+            this.aimPos.DX = obj.position.x - this.position.x;
+            this.aimPos.DY = obj.position.y - this.position.y;
+            this.aimPos.MAG = Math.sqrt(this.aimPos.DX ** 2 + this.aimPos.DY ** 2);
+        }
+        if(this.phase == 1 && this.delayTimer >= 299){
+            var w = new WindScreen([-1.75, 0]);
+            w.duration = 50;
+            w.setUser(this);
+            entities.push(w);
+            sounds.wind.currentTime = 0;
+            sounds.wind.play();
+        }
+        if(this.phase == 2){
+            if(this.delayTimer % 2 == 0){
+                for(var i = 0; i < 2; i++){
+                    var b = new Bullet(this.position.x + this.width/2,
+                                this.position.y + this.height/2, 10, 10);
+                    b.setUser(this);
+                    b.setVelocity(6 * (i * 2 - 1) * Math.cos(this.delayTimer/50 * 2 * Math.PI),
+                            6 * (i * 2 - 1) * Math.sin(this.delayTimer/50 * 2 * Math.PI));
+                    entities.push(b);
+                }
+            }
+        }
+        if(this.phase == 3){
+            if(this.delayTimer % 250 == 0){
+                for(var i = 0; i < GAME.canvas.height - 80; i += 30){
+                    var b = new ShieldBreaker(1199, i, 10, 10);
+                    b.setUser(this);
+                    b.setVelocity(-8, 0);
+                    entities.push(b);
+                }
+            }
+            if(this.delayTimer % 250 == 125){
+                for(var i = GAME.canvas.height; i > 80; i -= 30){
+                    var b = new ShieldBreaker(1199, i, 10, 10);
+                    b.setUser(this);
+                    b.setVelocity(-8, 0);
+                    entities.push(b);
+                }
+            }
+            if(this.hp <= 25){
+                this.phase = 4;
+            }
+        }
+        if(this.phase == 4){
+            this.applyForce(1.75 * this.aimPos.DX/this.aimPos.MAG, 1.75 * this.aimPos.DY/this.aimPos.MAG);
+        }
+    }
+    Enemy.prototype.interact.call(this, obj);
+}
+
 
 function UtilityObj(X, Y, W, H){
     Entity.call(this, X, Y, W, H);
@@ -4519,6 +4630,7 @@ function spawnEntities(){
                 entities.push(new Eye(1199, 200 - 60, GAME.canvas.width * 0.9));
                 entities.push(new Hand(1199, 200 - 60, GAME.canvas.width * 0.7));
                 entities.push(new Hand(1199, 200 - 60, GAME.canvas.width * 0.95));
+                entities.push(new Mouth(1199, 400 - 60, GAME.canvas.width * 0.825));
             }
         }
     }
