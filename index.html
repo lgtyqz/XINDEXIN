@@ -4,6 +4,7 @@
         <title>XINDEXIN</title>
         <meta charset="utf-8">
         <meta name="description" content="A simple, addictive arcade shooter about surviving waves of Chinese characters.">
+        <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
         <style>
             canvas {
                 border: 1px solid black;
@@ -38,9 +39,12 @@ var GAME = {
         this.isPaused = false;
         console.log("Nuclear Cuke");
         if(player.position.x == 0 && player.position.y == 0 && player.hp == 3){
-            alert("Weapon Loadout:\nZ: " +  player.weapons[0].name +
-        "\nX: " + player.weapons[1].name +
-        "\nC: " + player.weapons[2].name);
+            menuEntities.push(new Text(GAME.canvas.width/2, GAME.canvas.height/2 + 50,
+                        "Z: " +  player.weapons[0].name, 15, [255, 0, 0], 150));
+            menuEntities.push(new Text(GAME.canvas.width/2, GAME.canvas.height/2 + 65,
+                        "X: " +  player.weapons[1].name, 15, [255, 0, 0], 150));
+            menuEntities.push(new Text(GAME.canvas.width/2, GAME.canvas.height/2 + 80,
+                        "C: " +  player.weapons[2].name, 15, [255, 0, 0], 150));
         }
         setSprites();
     },
@@ -88,9 +92,12 @@ var GAME = {
         player = new Player(30, GAME.canvas.height/2 - 15, 30, 30);
         rWeapons.sort( function() { return 0.5 - Math.random() } );
         player.weapons = [rWeapons[5], rWeapons[1], rWeapons[3]];
-        alert("Weapon Loadout:\nZ: " +  player.weapons[0].name +
-        "\nX: " + player.weapons[1].name +
-        "\nC: " + player.weapons[2].name);
+        entities.push(new Text(GAME.canvas.width/2, GAME.canvas.height/4 - 30,
+                        "Z: " +  player.weapons[0].name, 30, [255, 0, 0], 150));
+        entities.push(new Text(GAME.canvas.width/2, GAME.canvas.height/4,
+                        "X: " +  player.weapons[1].name, 30, [255, 0, 0], 150));
+        entities.push(new Text(GAME.canvas.width/2, GAME.canvas.height/4 + 30,
+                        "C: " +  player.weapons[2].name, 30, [255, 0, 0], 150));
         GAME.load();
     },
     handleBGM: function(){
@@ -166,6 +173,11 @@ var sounds = {
     metalBark: new Audio("./sfx/metalbark.ogg"),
     birdScream: new Audio("./sfx/birdscream.ogg"),
     teleport: new Audio("./sfx/teleport.ogg"),
+    chargeUp: new Audio("./sfx/chargeup.ogg"),
+    summoning: new Audio("./sfx/summoning.ogg"),
+    superLaser: new Audio("./sfx/superlaser.ogg"),
+    roar: new Audio("./sfx/roar.ogg"),
+    zip: new Audio("./sfx/zip.ogg"),
 }
 var musics = [
     new Audio("./music/Blank.ogg"), //Menu
@@ -434,11 +446,16 @@ function setSprites(){
                     new Sprite("soulja-ready1", [1, 1]),
                     ],
                     7, true),
+        logo: new Animation([
+                    new Sprite("logo", [1, 1]),
+                    ],
+                    1, false),
     };
     for(var i in spriteAnimations){
         spriteAnimations[i].init();
     }
     player.animation = spriteAnimations.player_idle;
+    menuEntities[3].animation = spriteAnimations.logo;
 }
 for(var i = 0; i < musics.length; i++){
 	musics[i].loop = true;
@@ -2512,10 +2529,17 @@ Eye.prototype.update = function(){
     if(this.position.x > this.anchor){
         this.applyForce(-2, 0);
     }
+    if(this.position.x < this.anchor - 50){
+        this.applyForce(0.5, 0);
+    }
     if(this.delayTimer <= 0){
         if(this.phase == 0){
             this.phase = Math.floor(Math.random() * 3) + 1;
             this.delayTimer = 100;
+            if(this.phase == 3){
+                sounds.chargeUp.currentTime = 0;
+                sounds.chargeUp.play();
+            }
         }else{
             this.phase = 0;
             this.delayTimer = 200;
@@ -2537,6 +2561,8 @@ Eye.prototype.interact = function(obj){
             b.setVelocity(8 * Math.cos(i), 8 * -Math.sin(i));
             entities.push(b);
         }
+        sounds.mehPew.currentTime = 0;
+        sounds.mehPew.play();
     }
     if(this.phase == 2 && obj instanceof Player){
         if(this.delayTimer % 30 >= 28){
@@ -2562,6 +2588,10 @@ Eye.prototype.interact = function(obj){
             b.setVelocity(-30, 0);
             entities.push(b);
         }else if(obj instanceof Player){
+            if(this.delayTimer == 50){
+                sounds.superLaser.currentTime = 0;
+                sounds.superLaser.play();
+            }
             if(this.position.y > obj.position.y){
                 this.applyForce(0, -0.4);
             }else{
@@ -2618,6 +2648,8 @@ Hand.prototype.interact = function(obj){
         }
     }
     if(this.phase == 1 && this.delayTimer % 50 == 0){
+        sounds.summoning.currentTime = 0;
+        sounds.summoning.play();
         entities.push(new Genex(1199, Math.random() * 550));
     }
     if(this.phase == 2 && obj instanceof Player){
@@ -2675,6 +2707,8 @@ Mouth.prototype.update = function(){
             }else if(this.hp > 75){
                 this.phase = 2;
                 this.delayTimer = 100;
+                sounds.roar.currentTime = 0;
+                sounds.roar.play();
             }else if(this.hp > 25){
                 this.phase = 3;
                 this.delayTimer = 250;
@@ -3209,6 +3243,8 @@ W_StabRod.prototype.pewpew = function(){
     var s = new StabRod(player.position.x, player.position.y);
     s.setUser(player);
     entities.push(s);
+    sounds.zip.currentTime = 0;
+    sounds.zip.play();
 }
 
 function W_Teleport(){
@@ -3276,7 +3312,7 @@ document.onkeydown = function(e){
             musics[i].volume = GAME.musicVolume;
         }
     }
-    if(e.keyCode == 49){
+    /*if(e.keyCode == 49){
         GAME.difficulty = 0;
         entities.push(new Text(600, 300,
                     "Now playing on Normal difficulty.", 30, [0, 0, 0], 50));
@@ -3290,7 +3326,7 @@ document.onkeydown = function(e){
         GAME.difficulty = 2;
         entities.push(new Text(600, 300,
                     "Now playing on EXTREME difficulty.", 30, [0, 0, 0], 50));
-    }
+    }*/
     if(player.hp > 0 && !GAME.isPaused){
         if(Number.isInteger(GAME.level)){
             musics[GAME.level].play();
@@ -3327,7 +3363,7 @@ document.onkeydown = function(e){
                 player.weapons[2].fire();
             }
         }
-        if(e.keyCode == 79){ //O, skip level
+        /*if(e.keyCode == 79){ //O, skip level
             GAME.level++;
             GAME.frameCount = 0;
             player.hp = 3;
@@ -3336,7 +3372,7 @@ document.onkeydown = function(e){
         }
         if(e.keyCode == 81){ //Q, fast-forward
             GAME.frameCount = Number(prompt());
-        }
+        }*/
     }
 }
 document.onkeyup = function(e){
@@ -3362,13 +3398,18 @@ var menuEntities = [
     new Button(600 - 175, 400, 150, 25, "Start"),
     new Button(600 + 25, 400, 150, 25, "Instructions"),
     new Button(600 - 75, 500, 150, 25, "Reroll Weapons"),
-    new Text(600, 150,
-                                "XINDEXIN", 80, [0, 0, 0], Infinity),
+    new Entity(600 - 300, 0, 600, 400),
+    /*new Text(600, 150,
+                                "XINDEXIN", 80, [0, 0, 0], Infinity),*/
     new Text(600, 240,
                                 "新的心", 30, [0, 0, 0], Infinity),
     new Text(600, 300,
-                                "Arrow keys to move.", 30, [0, 0, 0], 150),
+                                "Arrow keys to move.", 30, [255, 0, 0], 150),
 ];
+menuEntities[3].draw = function(){
+    this.centerPosition();
+    Entity.prototype.draw.call(this);
+}
 menuEntities[0].doStuff = function(){
     GAME.load();
     sounds.enter.currentTime = 0;
@@ -3439,6 +3480,16 @@ function handleCheckpoints(){
             GAME.save();
         }
     }
+    /*if(GAME.difficulty >= 2 && GAME.level == 4 && GAME.frameCount == 12000){
+        entities.push(new Text(GAME.canvas.width/2, GAME.canvas.height/2,
+                                "CHECKPOINT!", 30, [0, 0, 0], 150));
+        entities.push(new Text(GAME.canvas.width/2, GAME.canvas.height/2 + 30,
+                                "(Game saved.)", 20, [100, 100, 100], 150));
+        player.hp = 3;
+        sounds.collect.currentTime = 0;
+        sounds.collect.play();
+        GAME.save();
+    }*/
 }
 
 /**
@@ -4626,7 +4677,7 @@ function spawnEntities(){
                 }
             }
             if(GAME.frameCount == 12000){
-                entities.push(new Eye(1199, 200 - 60, GAME.canvas.width * 0.75));
+                entities.push(new Eye(1199, 200 - 60, GAME.canvas.width * 0.65));
                 entities.push(new Eye(1199, 200 - 60, GAME.canvas.width * 0.9));
                 entities.push(new Hand(1199, 200 - 60, GAME.canvas.width * 0.7));
                 entities.push(new Hand(1199, 200 - 60, GAME.canvas.width * 0.95));
@@ -4816,5 +4867,6 @@ function main(){
         <img id="soulja-ready2" class="img" src="./images/Soulja-Ready2.png" alt="It didn't work.">
         <img id="soulja-ready3" class="img" src="./images/Soulja-Ready3.png" alt="It didn't work.">
         <img id="soulja-fire" class="img" src="./images/Soulja-Fire.png" alt="It didn't work.">
+        <img id="logo" class="img" src="./images/logo.png" alt="It didn't work.">
     </body>
 </html>
