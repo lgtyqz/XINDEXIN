@@ -16,6 +16,14 @@
                 height: 100%;
                 overflow: hidden;
             }
+            #load {
+                width: 100%;
+                height: 100%;
+                font-family: Comic Sans MS;
+                text-align: center;
+                overflow: hidden;
+                font-size: 60px;
+            }
         </style>
         <script>
 //headers
@@ -191,6 +199,8 @@ var sounds = {
     superLaser: new Audio("./sfx/superlaser.ogg"),
     roar: new Audio("./sfx/roar.ogg"),
     zip: new Audio("./sfx/zip.ogg"),
+    chomp: new Audio("./sfx/chomp.ogg"),
+    buzzwole: new Audio("./sfx/buzzwole.ogg")
 }
 var musics = [
     new Audio("./music/Blank.ogg"), //Menu
@@ -470,6 +480,111 @@ function setSprites(){
                     new Sprite("logo", [1, 1]),
                     ],
                     1, false),
+        eye_idle: new Animation([
+                    new Sprite("eye-idle", [1, 1]),
+                    new Sprite("eye-idle", [1, 1]),
+                    new Sprite("eye-idle", [1, 1]),
+                    new Sprite("eye-idle", [1, 1]),
+                    new Sprite("eye-idle", [1, 1]),
+                    new Sprite("eye-idle2", [1, 1]),
+                    new Sprite("eye-idle3", [1, 1]),
+                    new Sprite("eye-idle2", [1, 1]),
+                    ],
+                    13, true),
+        l_eye_beam: new Animation([
+                    new Sprite("leye-beam", [1, 1]),
+                    ],
+                    1, false),
+        r_eye_beam: new Animation([
+                    new Sprite("reye-beam", [1, 1]),
+                    ],
+                    1, false),
+        l_eye_charge: new Animation([
+                    new Sprite("leye-charge1", [1, 1]),
+                    new Sprite("leye-charge4", [1, 1]),
+                    new Sprite("leye-charge3", [1, 1]),
+                    new Sprite("leye-charge2", [1, 1]),
+                    new Sprite("leye-beam", [1, 1]),
+                    ],
+                    4, true),
+        r_eye_charge: new Animation([
+                    new Sprite("reye-charge1", [1, 1]),
+                    new Sprite("reye-charge4", [1, 1]),
+                    new Sprite("reye-charge3", [1, 1]),
+                    new Sprite("reye-charge2", [1, 1]),
+                    new Sprite("reye-beam", [1, 1]),
+                    ],
+                    4, true),
+        l_eye_lazer: new Animation([
+                    new Sprite("leye-lazer1", [1, 1]),
+                    new Sprite("leye-lazer2", [1, 1]),
+                    ],
+                    7, true),
+        r_eye_lazer: new Animation([
+                    new Sprite("reye-lazer1", [1, 1]),
+                    new Sprite("reye-lazer2", [1, 1]),
+                    ],
+                    7, true),
+        hand_idle: new Animation([
+                    new Sprite("hand", [1, 1]),
+                    ],
+                    1, false),
+        hand_smash: new Animation([
+                    new Sprite("hand-retreat1", [1, 1]),
+                    new Sprite("hand-retreat2", [1, 1]),
+                    new Sprite("hand-fist1", [1, 1]),
+                    new Sprite("hand-fist2", [1, 1]),
+                    new Sprite("hand-fist3", [1, 1]),
+                    new Sprite("hand-fist4", [1, 1]),
+                    new Sprite("hand-fist5", [1, 1]),
+                    new Sprite("hand-fist5", [1, 1]),
+                    new Sprite("hand-fist5", [1, 1]),
+                    new Sprite("hand-fist5", [1, 1]),
+                    new Sprite("hand-fist5", [1, 1]),
+                    new Sprite("hand-fist5", [1, 1]),
+                    ],
+                    7, true),
+        hand_summon: new Animation([
+                    new Sprite("hand-retreat1", [1, 1]),
+                    new Sprite("hand-retreat2", [1, 1]),
+                    new Sprite("hand-summon1", [1, 1]),
+                    new Sprite("hand-summon2", [1, 1]),
+                    new Sprite("hand-summon1", [1, 1]),
+                    new Sprite("hand-summon2", [1, 1]),
+                    new Sprite("hand-summon1", [1, 1]),
+                    new Sprite("hand-summon2", [1, 1]),
+                    new Sprite("hand-summon1", [1, 1]),
+                    new Sprite("hand-summon2", [1, 1]),
+                    new Sprite("hand-summon1", [1, 1]),
+                    new Sprite("hand-summon2", [1, 1]),
+                    ],
+                    7, true),
+        mouth_idle: new Animation([
+                    new Sprite("mouth", [1, 1]),
+                    ],
+                    1, false),
+        mouth_blow: new Animation([
+                    new Sprite("mouth", [1, 1]),
+                    new Sprite("mouth-blow2", [1, 1]),
+                    new Sprite("mouth-blow3", [1, 1]),
+                    new Sprite("mouth-blow4", [1, 1]),
+                    new Sprite("mouth-blow4", [1, 1]),
+                    new Sprite("mouth-blow4", [1, 1]),
+                    new Sprite("mouth-blow4", [1, 1]),
+                    new Sprite("mouth-blow4", [1, 1]),
+                    new Sprite("mouth-blow4", [1, 1]),
+                    new Sprite("mouth-blow4", [1, 1]),
+                    ],
+                    7, true),
+        mouth_roar: new Animation([
+                    new Sprite("mouth", [1, 1]),
+                    new Sprite("mouth-roar", [1, 1]),
+                    new Sprite("mouth-roar2", [1, 1]),
+                    new Sprite("mouth-roar3", [1, 1]),
+                    new Sprite("mouth-roar2", [1, 1]),
+                    new Sprite("mouth-roar", [1, 1]),
+                    ],
+                    7, true),
     };
     for(var i in spriteAnimations){
         spriteAnimations[i].init();
@@ -2541,7 +2656,7 @@ PatientZero.prototype.whenHit = function(){
                     255 * Math.random()];
 }
 
-function Eye(X, Y, anchor){
+function Eye(X, Y, anchor, isRight){
     Enemy.call(this, X, Y, 70, 70);
     this.color = [255, 255, 255];
     this.hp = 75;
@@ -2558,6 +2673,8 @@ function Eye(X, Y, anchor){
     this.aimPos = {DX: 0, DY: -1, MAG: 1};
     this.seed = Math.random();
     this.nextPhase = 1;
+    this.isRight = isRight;
+    this.animation = Object.create(spriteAnimations.eye_idle);
 }
 Eye.prototype = Object.create(Enemy.prototype);
 Eye.prototype.update = function(){
@@ -2575,10 +2692,23 @@ Eye.prototype.update = function(){
             if(this.phase == 3){
                 sounds.chargeUp.currentTime = 0;
                 sounds.chargeUp.play();
+                if(this.isRight){
+                    this.animation = Object.create(spriteAnimations.r_eye_charge);
+                }else{
+                    this.animation = Object.create(spriteAnimations.l_eye_charge);
+                }
+            }
+            if(this.phase == 2){
+                if(this.isRight){
+                    this.animation = Object.create(spriteAnimations.r_eye_beam);
+                }else{
+                    this.animation = Object.create(spriteAnimations.l_eye_beam);
+                }
             }
         }else{
             this.phase = 0;
             this.delayTimer = 200;
+            this.animation = Object.create(spriteAnimations.eye_idle);
         }
     }
     if(this.position.y > GAME.canvas.height/2 - this.height){
@@ -2627,6 +2757,11 @@ Eye.prototype.interact = function(obj){
             if(this.delayTimer == 50){
                 sounds.superLaser.currentTime = 0;
                 sounds.superLaser.play();
+                if(this.isRight){
+                    this.animation = Object.create(spriteAnimations.r_eye_lazer);
+                }else{
+                    this.animation = Object.create(spriteAnimations.l_eye_lazer);
+                }
             }
             if(this.position.y > obj.position.y){
                 this.applyForce(0, -0.4);
@@ -2655,6 +2790,7 @@ function Hand(X, Y, anchor){
     this.seed = Math.random();
     this.nextPhase = 1;
     this.retreating = true;
+    this.animation = Object.create(spriteAnimations.hand_idle);
 }
 Hand.prototype = Object.create(Enemy.prototype);
 Hand.prototype.update = function(){
@@ -2667,9 +2803,13 @@ Hand.prototype.update = function(){
         if(this.phase == 0){
             this.phase = Math.floor(Math.random() * 2) + 1;
             this.delayTimer = 100;
+            if(this.phase == 2){
+                this.animation = Object.create(spriteAnimations.hand_smash);
+            }
         }else{
             this.phase = 0;
             this.delayTimer = 200;
+            this.animation = Object.create(spriteAnimations.hand_idle);
         }
     }
     this.delayTimer--;
@@ -2687,6 +2827,7 @@ Hand.prototype.interact = function(obj){
         sounds.summoning.currentTime = 0;
         sounds.summoning.play();
         entities.push(new Genex(1199, Math.random() * 550));
+        this.animation = Object.create(spriteAnimations.hand_summon);
     }
     if(this.phase == 2 && obj instanceof Player){
         if(!this.retreating){
@@ -2696,6 +2837,7 @@ Hand.prototype.interact = function(obj){
             this.applyForce(2 * dx/mag, 0);
             if(this.position.x < player.position.x || this.delayTimer > 250){
                 this.retreating = true;
+                this.animation = Object.create(spriteAnimations.hand_idle);
             }
         }else{
             var dx = this.anchor - this.position.x;
@@ -2725,6 +2867,7 @@ function Mouth(X, Y, anchor){
     this.seed = Math.random();
     this.nextPhase = 1;
     this.retreating = true;
+    this.animation = Object.create(spriteAnimations.mouth_idle);
 }
 Mouth.prototype = Object.create(Enemy.prototype);
 Mouth.prototype.update = function(){
@@ -2734,6 +2877,9 @@ Mouth.prototype.update = function(){
     }
     if(this.phase < 3){
         this.applyForce(0, (200 - this.hp)/50 * Math.cos(this.delayTimer/50 * 2 * Math.PI));
+    }
+    if(this.delayTimer == 20 && this.hp > 125){
+        this.animation = Object.create(spriteAnimations.mouth_blow);
     }
     if(this.delayTimer <= 0){
         if(this.phase == 0){
@@ -2745,15 +2891,18 @@ Mouth.prototype.update = function(){
                 this.delayTimer = 100;
                 sounds.roar.currentTime = 0;
                 sounds.roar.play();
+                this.animation = Object.create(spriteAnimations.mouth_roar);
             }else if(this.hp > 25){
                 this.phase = 3;
                 this.delayTimer = 250;
             }else{
                 this.phase = 4;
                 this.delayTimer = 20;
+                this.animation = Object.create(spriteAnimations.mouth_roar);
             }
         }else{
             this.phase = 0;
+            this.animation = Object.create(spriteAnimations.mouth_idle);
             if(this.hp > 75){
                 this.delayTimer = 200;
             }else if(this.hp > 25){
@@ -2801,6 +2950,8 @@ Mouth.prototype.interact = function(obj){
                     b.setVelocity(-8, 0);
                     entities.push(b);
                 }
+                sounds.buzzwole.currentTime = 0;
+                sounds.buzzwole.play();
             }
             if(this.delayTimer % 250 == 125){
                 for(var i = GAME.canvas.height; i > 80; i -= 30){
@@ -2809,13 +2960,17 @@ Mouth.prototype.interact = function(obj){
                     b.setVelocity(-8, 0);
                     entities.push(b);
                 }
+                sounds.buzzwole.currentTime = 0;
+                sounds.buzzwole.play();
             }
             if(this.hp <= 25){
                 this.phase = 4;
+                this.animation = Object.create(spriteAnimations.mouth_roar);
             }
         }
         if(this.phase == 4){
             this.applyForce(1.75 * this.aimPos.DX/this.aimPos.MAG, 1.75 * this.aimPos.DY/this.aimPos.MAG);
+            sounds.chomp.play();
         }
     }
     Enemy.prototype.interact.call(this, obj);
@@ -4719,8 +4874,8 @@ function spawnEntities(){
                 }
             }
             if(GAME.frameCount == 12000){
-                entities.push(new Eye(1199, 200 - 60, GAME.canvas.width * 0.65));
-                entities.push(new Eye(1199, 200 - 60, GAME.canvas.width * 0.9));
+                entities.push(new Eye(1199, 200 - 60, GAME.canvas.width * 0.65, false));
+                entities.push(new Eye(1199, 200 - 60, GAME.canvas.width * 0.9, true));
                 entities.push(new Hand(1199, 200 - 60, GAME.canvas.width * 0.7));
                 entities.push(new Hand(1199, 200 - 60, GAME.canvas.width * 0.95));
                 entities.push(new Mouth(1199, 400 - 60, GAME.canvas.width * 0.825));
@@ -4755,13 +4910,14 @@ function main(){
         for(var i in spriteAnimations){
             for(var j in spriteAnimations[i].spriteList){
                 if(!spriteAnimations[i].spriteList[j].image){
-                    console.log("Still loading!");
+                    console.log(spriteAnimations[i]);
                     setSprites();
                     return;
                 }
             }
         }
         GAME.loadedEverything = true;
+        document.getElementById("load").innerHTML = "";
         return;
     }
     GAME.clear();
@@ -4807,6 +4963,7 @@ function main(){
         </script>
     </head>
     <body onload="init()">
+        <div id="load">LOADING!<br>LOADING!<br>LOADING!<br>LOADING!<br>LOADING!</div>
         <div id="output"></div>
         <img id="player" class="img" src="./images/Son.png" alt="It didn't work.">
         <img id="lost" class="img" src="./images/Lost.png" alt="It didn't work.">
@@ -4910,5 +5067,39 @@ function main(){
         <img id="soulja-ready3" class="img" src="./images/Soulja-Ready3.png" alt="It didn't work.">
         <img id="soulja-fire" class="img" src="./images/Soulja-Fire.png" alt="It didn't work.">
         <img id="logo" class="img" src="./images/logo.png" alt="It didn't work.">
+        <img id="eye-idle" class="img" src="./images/Eye-Idle.png" alt="It didn't work.">
+        <img id="eye-idle2" class="img" src="./images/Eye-Idle2.png" alt="It didn't work.">
+        <img id="eye-idle3" class="img" src="./images/Eye-Idle3.png" alt="It didn't work.">
+        <img id="leye-charge1" class="img" src="./images/LEye-Charge1.png" alt="It didn't work.">
+        <img id="leye-charge2" class="img" src="./images/LEye-Charge2.png" alt="It didn't work.">
+        <img id="leye-charge3" class="img" src="./images/LEye-Charge3.png" alt="It didn't work.">
+        <img id="leye-charge4" class="img" src="./images/LEye-Charge4.png" alt="It didn't work.">
+        <img id="leye-lazer1" class="img" src="./images/LEye-Lazer1.png" alt="It didn't work.">
+        <img id="leye-lazer2" class="img" src="./images/LEye-Lazer2.png" alt="It didn't work.">
+        <img id="leye-beam" class="img" src="./images/LEye-Beam.png" alt="It didn't work.">
+        <img id="reye-charge1" class="img" src="./images/REye-Charge1.png" alt="It didn't work.">
+        <img id="reye-charge2" class="img" src="./images/REye-Charge2.png" alt="It didn't work.">
+        <img id="reye-charge3" class="img" src="./images/REye-Charge3.png" alt="It didn't work.">
+        <img id="reye-charge4" class="img" src="./images/REye-Charge4.png" alt="It didn't work.">
+        <img id="reye-lazer1" class="img" src="./images/REye-Lazer1.png" alt="It didn't work.">
+        <img id="reye-lazer2" class="img" src="./images/REye-Lazer2.png" alt="It didn't work.">
+        <img id="reye-beam" class="img" src="./images/REye-Beam.png" alt="It didn't work.">
+        <img id="hand" class="img" src="./images/Hand.png" alt="It didn't work.">
+        <img id="hand-retreat1" class="img" src="./images/Hand-Retreat1.png" alt="It didn't work.">
+        <img id="hand-retreat2" class="img" src="./images/Hand-Retreat2.png" alt="It didn't work.">
+        <img id="hand-fist1" class="img" src="./images/Hand-Fist1.png" alt="It didn't work.">
+        <img id="hand-fist2" class="img" src="./images/Hand-Fist2.png" alt="It didn't work.">
+        <img id="hand-fist3" class="img" src="./images/Hand-Fist3.png" alt="It didn't work.">
+        <img id="hand-fist4" class="img" src="./images/Hand-Fist4.png" alt="It didn't work.">
+        <img id="hand-fist5" class="img" src="./images/Hand-Fist5.png" alt="It didn't work.">
+        <img id="hand-summon1" class="img" src="./images/Hand-Summon1.png" alt="It didn't work.">
+        <img id="hand-summon2" class="img" src="./images/Hand-Summon2.png" alt="It didn't work.">
+        <img id="mouth" class="img" src="./images/Mouth.png" alt="It didn't work.">
+        <img id="mouth-blow2" class="img" src="./images/Mouth-Blow2.png" alt="It didn't work.">
+        <img id="mouth-blow3" class="img" src="./images/Mouth-Blow3.png" alt="It didn't work.">
+        <img id="mouth-blow4" class="img" src="./images/Mouth-Blow4.png" alt="It didn't work.">
+        <img id="mouth-roar" class="img" src="./images/Mouth-Roar.png" alt="It didn't work.">
+        <img id="mouth-roar2" class="img" src="./images/Mouth-Roar2.png" alt="It didn't work.">
+        <img id="mouth-roar3" class="img" src="./images/Mouth-Roar3.png" alt="It didn't work.">
     </body>
 </html>
