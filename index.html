@@ -760,6 +760,7 @@ function Bullet(X, Y, W, H, color=[0, 0, 0]){
     Entity.call(this, X, Y, W, H);
     this.color = color; //list format
     this.bounces = 2;
+    this.active = true;
 }
 Bullet.prototype = Object.create(Entity.prototype);
 Bullet.prototype.setVelocity = function(xVel, yVel){ this.velocity = {x: xVel, y: yVel}; }
@@ -789,7 +790,7 @@ Bullet.prototype.typeCheck = function(obj){
         var objP = obj instanceof Player;
         var objE = obj instanceof Enemy;
         if((userP && objE || userE && objP || this.user === null) && 
-        this.collides(obj) && obj.invinciTimer <= 0){
+        this.collides(obj) && obj.invinciTimer <= 0 && this.active){
             obj.whenHit();
             return true;
         }
@@ -884,6 +885,59 @@ PowerBullet.prototype.interact = function(obj){
                 20, 10, [100, 0, 100], 20));
             particles[i].setVelocity(Math.random() * 30 - 15,
                                     Math.random() * 30 - 15);
+            entities.push(particles[i]);
+        }
+    }
+}
+
+function BodyPiercer(X, Y){
+    Bullet.call(this, X, Y, GAME.canvas.width, 10);
+    this.color = [255, 0, 255];
+    this.duration = 10;
+    this.maxDuration = 10;
+}
+BodyPiercer.prototype = Object.create(Bullet.prototype);
+BodyPiercer.prototype.update = function(){
+    this.duration--;
+    Bullet.prototype.update.call(this);
+    if(this.duration <= this.maxDuration - 2){
+        this.active = false;
+    }
+    if(this.duration == 0){
+        this.dead = true;
+    }
+}
+BodyPiercer.prototype.draw = function(){
+    var CTX = GAME.context;
+    this.centerPosition();
+    CTX.globalAlpha = this.duration/this.maxDuration;
+    CTX.fillStyle = listToColor(this.color);
+    CTX.fillRect(-this.width/2, -this.height/2, this.width, this.height);
+    CTX.globalAlpha = 1;
+    CTX.restore();
+}
+BodyPiercer.prototype.interact = function(obj){
+    if(obj instanceof Player && obj.position.x != 0 && obj.position.y != 0){
+        this.velocity.x = player.velocity.x;
+        this.velocity.y = player.velocity.y;
+    }
+    if(this.typeCheck(obj) && this.duration > this.maxDuration - 2){
+        if(obj instanceof Player){
+            obj.hp--;
+            obj.invinciTimer = 75;
+            sounds.hurt.currentTime = 0;
+            sounds.hurt.play();
+        }else{
+            obj.hp -= 2;
+        }
+        var particles = [];
+        for(var i = 0; i < 12; i++){
+            particles.push(new Particle(
+                obj.position.x + obj.width/2,
+                obj.position.y + obj.height/2,
+                8, 2, [100, 0, 0], 20));
+            particles[i].setVelocity(Math.random() * 20 - 10,
+                                    Math.random() * 20 - 10);
             entities.push(particles[i]);
         }
     }
@@ -999,7 +1053,7 @@ Reflector.prototype.interact = function(obj){
         (obj.user != this.user || this.user == null)){
         obj.velocity.x *= -1.25;
         if(obj instanceof Bullet && !(obj instanceof WindScreen) &&
-        !(obj instanceof Reflector)){
+        !(obj instanceof Reflector) && !(obj instanceof BodyPiercer)){
             obj.setUser(this.user);
             if(this.user instanceof Player){
                 obj.color = [0, 0, 255];
@@ -1037,7 +1091,7 @@ WindScreen.prototype.fix = function(obj){
 }
 WindScreen.prototype.interact = function(obj){
     if((obj instanceof Bullet || obj instanceof Enemy || obj instanceof Player)
-    && this.collides(obj) && obj != this.user){
+    && !(obj instanceof BodyPiercer) && this.collides(obj) && obj != this.user){
         obj.applyForce(this.blowForce[0], this.blowForce[1]);
         if(obj instanceof Bullet && !(obj instanceof WindScreen)){
             if(this.user instanceof Enemy){
@@ -3010,7 +3064,7 @@ Wall.prototype.draw = function(){
 Wall.prototype.interact = function(obj){
     if((obj instanceof Player || obj instanceof Enemy ||
     (obj instanceof Bullet && !(obj instanceof Shield)
-    && this.variant > 1)) && 
+    && !(obj instanceof BodyPiercer) && this.variant > 1)) && 
     this.collides(obj) && !(obj instanceof Wall)){
         //Left
         if(obj.position.x + obj.width > this.position.x &&
@@ -3464,6 +3518,20 @@ W_Teleport.prototype.pewpew = function(){
     sounds.teleport.play();
 }
 
+function W_BodyPiercer(){
+    PWeapon.call(this, "Body Piercer", 33);
+}
+W_BodyPiercer.prototype = Object.create(PWeapon.prototype);
+W_BodyPiercer.prototype.pewpew = function(){
+    var b = new BodyPiercer(player.position.x + player.width/2,
+                            player.position.y + player.height/2 - 5);
+    b.setUser(player);
+    entities.push(b);
+    player.rotation = -0.7 * Math.PI;
+	sounds.laserPew.currentTime = 0;
+	sounds.laserPew.play();
+}
+
 var entities = [];
 var player = new Player(0, 0, 30, 30);
 var initTime = 0;
@@ -3477,7 +3545,8 @@ var weapons = [
     new W_ForceShooter(),
     new W_TripleShot(),
     new W_StabRod(),
-    new W_Teleport()
+    new W_Teleport(),
+    new W_BodyPiercer(),
 ];
 var rWeapons = weapons.slice();
 rWeapons.sort( function() { return 0.5 - Math.random() } );
