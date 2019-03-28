@@ -831,7 +831,7 @@ LeftistBullet.prototype.update = function(){
     Bullet.prototype.update.call(this);
 }
 
-function ShieldBreaker(X, Y, W, H){
+function ShieldBreaker(X, Y, W=10, H=10){
     Bullet.call(this, X, Y, W, H);
     this.color = [255, 100, 255];
 }
@@ -867,6 +867,9 @@ PowerBullet.prototype.interact = function(obj){
     if(this.typeCheck(obj)){
         if(obj instanceof Player){
             obj.hp--;
+            obj.invinciTimer = 75;
+            sounds.hurt.currentTime = 0;
+            sounds.hurt.play();
         }else{
             obj.hp -= 5;
         }
@@ -1091,6 +1094,9 @@ ForceShot.prototype.interact = function(obj){
         }
         if(obj instanceof Player){
             obj.velocity.x = -22;
+            obj.invinciTimer = 75;
+            sounds.hurt.currentTime = 0;
+            sounds.hurt.play();
         }
         this.dead = true;
     }
