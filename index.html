@@ -3506,8 +3506,8 @@ function W_Teleport(){
 }
 W_Teleport.prototype = Object.create(PWeapon.prototype);
 W_Teleport.prototype.pewpew = function(){
-    if(player.invinciTimer < 9){
-        player.invinciTimer = 7;
+    if(player.invinciTimer < 16){
+        player.invinciTimer = 15;
     }
     player.velocity.x = 0;
     player.velocity.y = 0;
@@ -3797,7 +3797,7 @@ function spawnEntities(){
                 if(GAME.frameCount % 200 == 0){
                     entities.push(new Bat(1199, Math.random() * 550, 1));
                 }
-                if(GAME.frameCount % 400 == 200){
+                if(GAME.frameCount % 500 == 200){
                     entities.push(new CrossShot(1199, Math.random() * 550, 1));
                 }
             }else if(GAME.frameCount < 2500){
@@ -3831,16 +3831,13 @@ function spawnEntities(){
                 if(GAME.frameCount % 600 == 0){
                     entities.push(new Raven(1199, Math.random() * 550, 1));
                 }
-                if(GAME.frameCount % 200 == 0){
+                if(GAME.frameCount % 40 == 0){
                     entities.push(new Bat(1199, Math.random() * 550, 1));
                 }
                 if(GAME.frameCount % 300 == 0){
                     entities.push(new Lost(1199, Math.random() * 550, 1));
                 }
-                if(GAME.frameCount % 400 == 200){
-                    entities.push(new CrossShot(1199, Math.random() * 550, 1));
-                }
-            }else if(GAME.frameCount < 7500){
+            }else if(GAME.frameCount < 7000){
                 if(GAME.frameCount % 500 == 0){
                     entities.push(new Raven(1199, Math.random() * 550, 1));
                 }
@@ -3853,6 +3850,14 @@ function spawnEntities(){
                 if(GAME.frameCount % 600 == 200){
                     entities.push(new CrossShot(1199, Math.random() * 550, 1));
                 }
+            }else if(GAME.frameCount < 7750){
+                if(GAME.frameCount % 1000 < 200 && GAME.frameCount % 50 == 0){
+                    entities.push(new Raven(1199, Math.random() * 550, 1));
+                }
+            }else if(GAME.frameCount < 8000){
+                if(GAME.frameCount % 5 == 0){
+                    entities.push(new Bat(1199, Math.random() * 550, 1));
+                }
             }else if(GAME.frameCount < 9000){
                 if(GAME.frameCount % 500 == 0){
                     entities.push(new Raven(1199, Math.random() * 550, 1));
@@ -3862,9 +3867,6 @@ function spawnEntities(){
                 }
                 if(GAME.frameCount % 300 == 0){
                     entities.push(new Lost(1199, Math.random() * 550, 2));
-                }
-                if(GAME.frameCount % 700 == 350){
-                    entities.push(new Mirage(1199, Math.random() * 550, 1));
                 }
                 if(GAME.frameCount % 500 == 200){
                     entities.push(new CrossShot(1199, Math.random() * 550, 2));
@@ -3886,7 +3888,7 @@ function spawnEntities(){
                 GAME.canvas.height - 200, 200, 200, 1));
             }
             if(GAME.frameCount < 500){
-                if(GAME.frameCount % 200 == 0){
+                if(GAME.frameCount % 100 == 0){
                     if(GAME.frameCount % 400 >= 100){
                         entities.push(new Lost(1199, Math.random() * 550, 2));
                     }else{
@@ -3894,7 +3896,7 @@ function spawnEntities(){
                     }
                 }
             }else if(GAME.frameCount < 1500){
-                if(GAME.frameCount % 400 == 0){
+                if(GAME.frameCount % 250 == 0){
                     if(GAME.frameCount % 400 >= 100){
                         entities.push(new Lost(1199, Math.random() * 550, 3));
                     }else{
@@ -4158,31 +4160,31 @@ function spawnEntities(){
                                 "BGM: ♪ A Melancholy Autumn ♪", 20, [100, 100, 100], 150));
             }
             if(GAME.frameCount < 500){
-                if(GAME.frameCount % 50 == 0){
+                if(GAME.frameCount % 5 == 0){
                     entities.push(new Bat(1199, Math.random() * 550, 1));
                 }
             }else if(GAME.frameCount < 1000){
-                if(GAME.frameCount % 50 == 0){
+                if(GAME.frameCount % 20 == 0){
                     entities.push(new Bat(1199, Math.random() * 550, 1));
                 }
                 if(GAME.frameCount % 300 == 0){
                     entities.push(new Lost(1199, Math.random() * 550, 2));
                 }
             }else if(GAME.frameCount < 2000){
-                if(GAME.frameCount % 100 == 0){
+                if(GAME.frameCount % 50 == 0){
                     entities.push(new Bat(1199, Math.random() * 550, 1));
                 }
-                if(GAME.frameCount % 400 == 200){
+                if(GAME.frameCount % 200 == 100){
                     entities.push(new CrossShot(1199, Math.random() * 550, 2));
                 }
             }else if(GAME.frameCount < 2500){
-                if(GAME.frameCount % 100 == 0){
+                if(GAME.frameCount % 50 == 0){
                     entities.push(new Bat(1199, Math.random() * 550, 1));
                 }
-                if(GAME.frameCount % 300 == 0){
+                if(GAME.frameCount % 200 == 0){
                     entities.push(new Lost(1199, Math.random() * 550, 2));
                 }
-                if(GAME.frameCount % 400 == 200){
+                if(GAME.frameCount % 300 == 200){
                     entities.push(new CrossShot(1199, Math.random() * 550, 2));
                 }
             }else if(GAME.frameCount < 3500){
@@ -4209,7 +4211,7 @@ function spawnEntities(){
                 if(GAME.frameCount % 50 == 0){
                     entities.push(new Bat(1199, Math.random() * 550, 1));
                 }
-                if(GAME.frameCount % 300 == 0){
+                if(GAME.frameCount % 100 == 0){
                     entities.push(new Lost(1199, Math.random() * 550, 2));
                 }
                 if(GAME.frameCount % 400 == 200){
@@ -4269,7 +4271,7 @@ function spawnEntities(){
                     }
                 }
             }else if(GAME.frameCount < 1500){
-                if(GAME.frameCount % 200 == 0){
+                if(GAME.frameCount % 100 == 0){
                     if(GAME.frameCount % 400 >= 100){
                         entities.push(new Lost(1199, Math.random() * 550, 3));
                     }else{
@@ -4831,9 +4833,9 @@ function spawnEntities(){
             }
             if(GAME.frameCount == 0){
                 entities.push(new Text(GAME.canvas.width/2, GAME.canvas.height/2,
-                                "Final Stage EX - The Secret Lab", 50, [0, 0, 0], 150));
+                                "Final Stage EX - The Secret Lab", 50, [255, 0, 0], 150));
                 entities.push(new Text(GAME.canvas.width/2, GAME.canvas.height/2 + 50,
-                                "BGM: ♪ [something] ♪", 20, [100, 100, 100], 150));
+                                "BGM: ♪ Pickle Guy ♪", 20, [255, 100, 100], 150));
             }
             if(GAME.frameCount < 500){
                 if(GAME.frameCount % 350 == 0){
@@ -4905,7 +4907,7 @@ function spawnEntities(){
                 }
             }else if(GAME.frameCount < 7750){
                 if(GAME.frameCount % 100 == 0 && GAME.frameCount < 6700){
-                    entities.push(new CrossShot(1199, Math.random() * 550, 3));
+                    entities.push(new CrossShot(1199, 200 + Math.random() * 150, 3));
                 }
                 if(GAME.frameCount % 50 == 0 && GAME.frameCount >= 7350){
                     entities.push(new Lost(1199, Math.random() * 550, 3));
@@ -4930,8 +4932,8 @@ function spawnEntities(){
                 if(GAME.frameCount % 750 == 350){
                     entities.push(new Charger(1199, Math.random() * 550));
                 }
-            }else if(GAME.frameCount < 11000){
-                if(GAME.frameCount % 660 == 0){
+            }else if(GAME.frameCount < 11250){
+                if(GAME.frameCount % 400 == 0){
                     entities.push(new Canid(1199, Math.random() * 550, 3));
                 }
                 if(GAME.frameCount == 10000){
